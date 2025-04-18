@@ -7,6 +7,12 @@
 #ifndef PCH_H
 #define PCH_H
 
+
 // add headers that you want to pre-compile here
+#include <svh/serializer.hpp>
+#include <svh/std_types.hpp>
+#include "test_structs.hpp"
+
+#include <iostream>
 
 #endif //PCH_H
