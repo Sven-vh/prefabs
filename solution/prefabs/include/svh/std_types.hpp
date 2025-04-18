@@ -138,116 +138,16 @@ namespace std {
 		return result;
 	}
 
-#if 1
+	/* Generic container for vector, array, set, unordered_set, multiset, unordered_multiset, deque, list, foward_list, initializer_lists */
 	template<class T>
 	static inline auto SerializeImpl(const T& c)
 		-> svh::enable_if_has_begin_end<T, svh::json> {
 		svh::json result = svh::json::array();
-		for (auto const& item : c)
-			result.push_back(svh::Serializer::Serialize(item));
-		return result;
-	}
-#else
-	/* For vectors */
-	template<typename T, typename A>
-	static inline svh::json SerializeImpl(const std::vector<T, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
+		for (auto const& item : c) {
 			result.push_back(svh::Serializer::Serialize(item));
 		}
 		return result;
 	}
-
-	/* For sets */
-	template<typename T, typename C, typename A>
-	static inline svh::json SerializeImpl(const std::set<T, C, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
-	/* For unordered sets */
-	template<typename T, typename H, typename E, typename A>
-	static inline svh::json SerializeImpl(const std::unordered_set<T, H, E, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
-	/* For multisets */
-	template<typename T, typename C, typename A>
-	static inline svh::json SerializeImpl(const std::multiset<T, C, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-	/* For unordered multisets */
-	template<typename T, typename H, typename E, typename A>
-	static inline svh::json SerializeImpl(const std::unordered_multiset<T, H, E, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
-	/* For deques */
-	template<typename T, typename A>
-	static inline svh::json SerializeImpl(const std::deque<T, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
-	/* For lists */
-	template<typename T, typename A>
-	static inline svh::json SerializeImpl(const std::list<T, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
-	/* For forwards lists */
-	template<typename T, typename A>
-	static inline svh::json SerializeImpl(const std::forward_list<T, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
-	/* For arrays */
-	template<typename T, std::size_t N>
-	static inline svh::json SerializeImpl(const std::array<T, N>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-	/* For initializer lists */
-	template<typename T>
-	static inline svh::json SerializeImpl(const std::initializer_list<T>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-#endif
-
-
 
 #if SVH_HAVE_STD_OPTIONAL
 	/* For optionals (only if C++17 and <optional> is available) */
@@ -265,9 +165,9 @@ namespace std {
 	template<typename... Ts>
 	static inline svh::json SerializeImpl(const std::variant<Ts...>& value) {
 		return std::visit([](const auto& v) {
-			//
 			return svh::Serializer::Serialize(v);
-			}, value);
+			}
+		, value);
 	}
 #endif
 
