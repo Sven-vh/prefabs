@@ -1,5 +1,6 @@
 #pragma once
 #include "svh/serializer.hpp"
+#include "svh/defines.hpp"
 
 #include <vector>			// for std::vector
 #include <map>				// for std::map
@@ -28,16 +29,6 @@
 
 
 namespace std {
-	/* For vectors */
-	template<typename T, typename A>
-	static inline svh::json SerializeImpl(const std::vector<T, A>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
 	/* For maps */
 	template<
 		typename K, // Key type
@@ -147,9 +138,19 @@ namespace std {
 		return result;
 	}
 
-	/* For arrays */
-	template<typename T, std::size_t N>
-	static inline svh::json SerializeImpl(const std::array<T, N>& value) {
+#if 1
+	template<class T>
+	static inline auto SerializeImpl(const T& c)
+		-> svh::enable_if_has_begin_end<T, svh::json> {
+		svh::json result = svh::json::array();
+		for (auto const& item : c)
+			result.push_back(svh::Serializer::Serialize(item));
+		return result;
+	}
+#else
+	/* For vectors */
+	template<typename T, typename A>
+	static inline svh::json SerializeImpl(const std::vector<T, A>& value) {
 		svh::json result = svh::json::array();
 		for (const auto& item : value) {
 			result.push_back(svh::Serializer::Serialize(item));
@@ -216,16 +217,6 @@ namespace std {
 		return result;
 	}
 
-	/* For initializer lists */
-	template<typename T>
-	static inline svh::json SerializeImpl(const std::initializer_list<T>& value) {
-		svh::json result = svh::json::array();
-		for (const auto& item : value) {
-			result.push_back(svh::Serializer::Serialize(item));
-		}
-		return result;
-	}
-
 	/* For forwards lists */
 	template<typename T, typename A>
 	static inline svh::json SerializeImpl(const std::forward_list<T, A>& value) {
@@ -235,6 +226,28 @@ namespace std {
 		}
 		return result;
 	}
+
+	/* For arrays */
+	template<typename T, std::size_t N>
+	static inline svh::json SerializeImpl(const std::array<T, N>& value) {
+		svh::json result = svh::json::array();
+		for (const auto& item : value) {
+			result.push_back(svh::Serializer::Serialize(item));
+		}
+		return result;
+	}
+	/* For initializer lists */
+	template<typename T>
+	static inline svh::json SerializeImpl(const std::initializer_list<T>& value) {
+		svh::json result = svh::json::array();
+		for (const auto& item : value) {
+			result.push_back(svh::Serializer::Serialize(item));
+		}
+		return result;
+	}
+#endif
+
+
 
 #if SVH_HAVE_STD_OPTIONAL
 	/* For optionals (only if C++17 and <optional> is available) */

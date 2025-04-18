@@ -12,22 +12,38 @@ namespace svh {
 	struct is_specialization<Ref<Args...>, Ref> : std::true_type {};
 
 	template<typename T> /* Has a visitable struct implementation */
-	using is_visitable = std::integral_constant<bool, visit_struct::traits::is_visitable<T>::value>;
+	constexpr bool is_visitable_v = visit_struct::traits::is_visitable<T>::value;
 
-	template<typename T, typename R>
-	using enable_if_visitable = std::enable_if_t<is_visitable<T>::value, R>;
+	template<typename T, typename R = void>
+	using enable_if_visitable = std::enable_if_t<is_visitable_v<T>, R>;
 
 	template<typename T> /* Is considerd to be arithmetic */
-	using is_number = std::integral_constant<bool, std::is_arithmetic<T>::value>;
+	constexpr bool is_number_v = std::is_arithmetic<T>::value;
 
-	template<typename T, typename R>
-	using enable_if_number = std::enable_if_t<is_number<T>::value, R>;
+	template<typename T, typename R = void>
+	using enable_if_number = std::enable_if_t<is_number_v<T>, R>;
 
 	template<typename T> /* Is considerd to be an enum */
-	using is_enum = std::integral_constant<bool, std::is_enum<T>::value>;
+	constexpr bool is_enum_v = std::is_enum<T>::value;
 
-	template<typename T, typename R>
-	using enable_if_enum = std::enable_if_t<is_enum<T>::value, R>;
+	template<typename T, typename R = void>
+	using enable_if_enum = std::enable_if_t<is_enum_v<T>, R>;
+
+	/* Has std::begin/std::end */
+	template<class, class = void>
+	struct has_begin_end : std::false_type {};
+
+	template<class T>
+	struct has_begin_end<
+		T, std::void_t< decltype(std::begin(std::declval<T&>())), decltype(std::end(std::declval<T&>()))>> : std::true_type {
+	};
+
+	template<class T>
+	constexpr bool has_begin_end_v = has_begin_end<T>::value;
+
+	template<class T, class R = void>
+	using enable_if_has_begin_end = std::enable_if_t<has_begin_end_v<T>, R>;
+
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected
