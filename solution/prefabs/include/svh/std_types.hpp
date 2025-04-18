@@ -70,16 +70,22 @@ namespace std {
 	static inline svh::json SerializeImpl(const std::multimap<K, V, C, A>& mm) {
 		svh::json result = svh::json::object();
 
-		for (auto& item : mm) {
-			result[item.first].push_back(svh::Serializer::Serialize(item.second));
-		}
-		// If the value is a single element, convert it to a single value
-		for (auto& [key, value] : result.items()) {
-			if (value.is_array() && value.size() == 1) {
-				value = std::move(value.front());
+		for (auto&& [k, v] : mm) {
+			auto& slot = result[k];
+			if (slot.is_null()) {
+				// first value for this key – store it directly
+				slot = svh::Serializer::Serialize(v);
+			} else if (slot.is_array()) {
+				// already collecting duplicates
+				slot.push_back(svh::Serializer::Serialize(v));
+			} else {
+				// second value – convert the existing scalar into an array
+				svh::json tmp = std::move(slot);
+				slot = svh::json::array();
+				slot.push_back(std::move(tmp));
+				slot.push_back(svh::Serializer::Serialize(v));
 			}
 		}
-
 		return result;
 	}
 
@@ -93,13 +99,20 @@ namespace std {
 	>
 	static inline svh::json SerializeImpl(const std::unordered_multimap<K, V, H, E, A>& umm) {
 		svh::json result = svh::json::object();
-		for (auto& item : umm) {
-			result[item.first].push_back(svh::Serializer::Serialize(item.second));
-		}
-		// If the value is a single element, convert it to a single value
-		for (auto& [key, value] : result.items()) {
-			if (value.is_array() && value.size() == 1) {
-				value = std::move(value.front());
+		for (auto&& [k, v] : umm) {
+			auto& slot = result[k];
+			if (slot.is_null()) {
+				// first value for this key – store it directly
+				slot = svh::Serializer::Serialize(v);
+			} else if (slot.is_array()) {
+				// already collecting duplicates
+				slot.push_back(svh::Serializer::Serialize(v));
+			} else {
+				// second value – convert the existing scalar into an array
+				svh::json tmp = std::move(slot);
+				slot = svh::json::array();
+				slot.push_back(std::move(tmp));
+				slot.push_back(svh::Serializer::Serialize(v));
 			}
 		}
 		return result;
