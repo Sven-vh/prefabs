@@ -61,6 +61,7 @@ namespace svh {
 	template<class T, class R = void>
 	using enable_if_has_emplace_back = std::enable_if_t<has_emplace_back_v<T>, R>;
 
+	/* has insert */
 	template<class, class = void>
 	struct has_insert : std::false_type {};
 
@@ -137,6 +138,10 @@ namespace svh {
 	template<typename T, typename R = void>
 	using enable_if_associative_map = std::enable_if_t<is_associative_map_v<T>, R>;
 
+	/* Is String */
+	template<typename T>
+	constexpr bool is_string_v = std::is_same<T, std::string>::value;
+
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected
@@ -180,18 +185,28 @@ namespace svh {
 	using serialize_fn = decltype(SerializeImpl(std::declval<const T&>()));
 
 	template<typename T>
-	using has_serialize = std::integral_constant<bool, is_detected<serialize_fn, T>::value>;
+	constexpr bool has_serialize_v = is_detected<serialize_fn, T>::value;
 
 	template <typename T, typename R>
-	using enable_if_has_serialize = std::enable_if_t<has_serialize<T>::value, R>;
+	using enable_if_has_serialize = std::enable_if_t<has_serialize_v<T>, R>;
 
 	/* Deserializer function detection */
 	template <typename T>
 	using deserialize_fn = decltype(DeserializeImpl(std::declval<const json&>(), std::declval<T&>()));
 
 	template<typename T>
-	using has_deserialize = std::integral_constant<bool, is_detected<deserialize_fn, T>::value>;
+	constexpr bool has_deserialize_v = is_detected<deserialize_fn, T>::value;
 
 	template <typename T, typename R>
-	using enable_if_has_deserialize = std::enable_if_t<has_deserialize<T>::value, R>;
+	using enable_if_has_deserialize = std::enable_if_t<has_deserialize_v<T>, R>;
+
+	/* Compare function detection */
+	template <typename T>
+	using compare_fn = decltype(CompareImpl(std::declval<const T&>(), std::declval<const T&>()));
+
+	template<typename T>
+	constexpr bool has_compare_v = is_detected<compare_fn, T>::value;
+
+	template <typename T, typename R>
+	using enable_if_has_compare = std::enable_if_t<has_compare_v<T>, R>;
 }

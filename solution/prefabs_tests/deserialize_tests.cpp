@@ -237,6 +237,10 @@ public:
 		std::map<std::string, int> m;
 		CheckDeserialization(m, svh::json::object({}));
 	}
+	TEST_METHOD(FloatMap) {
+		std::map<float, int> m{ {1.0f,1},{2.0f,2} };
+		CheckDeserialization(m, svh::json::object({ {"1.0",1},{"2.0",2} }));
+	}
 
 	TEST_METHOD(MapOfMaps) {
 		std::map<std::string, std::map<std::string, int>> mm{

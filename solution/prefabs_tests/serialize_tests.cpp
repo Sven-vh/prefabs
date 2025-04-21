@@ -237,6 +237,13 @@ public:
 		std::map<std::string, int> m{ {"one",1},{"two",2} };
 		CheckSerialization(m, svh::json::object({ {"one",1},{"two",2} }));
 	}
+	TEST_METHOD(FloatMap) {
+		std::map<float, int> m{ {1.0f,1},{2.0f,2} };
+		//auto json_object = svh::json::object({ {1.0f,1},{2.0f,2} }); // isn't valid JSON
+		//CheckSerialization(m, json_object);
+		auto result = svh::Serializer::ToJson(m);
+		Logger::WriteMessage(result.dump().c_str());
+	}
 	TEST_METHOD(EmptyMap) {
 		std::map<std::string, int> m;
 		CheckSerialization(m, svh::json::object({}));

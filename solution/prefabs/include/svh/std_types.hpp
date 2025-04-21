@@ -39,7 +39,12 @@ namespace std {
 	static inline svh::json SerializeImpl(const std::map<K, V, C, A>& value) {
 		svh::json result = svh::json::object();
 		for (const auto& item : value) {
-			result[item.first] = svh::Serializer::ToJson(item.second);
+			if constexpr (svh::is_string_v<K>) {
+				result[item.first] = svh::Serializer::ToJson(item.second);
+			} else {
+				auto key = svh::Serializer::ToJson(item.first).dump();
+				result[key] = svh::Serializer::ToJson(item.second);
+			}
 		}
 		return result;
 	}
@@ -55,7 +60,12 @@ namespace std {
 	static inline svh::json SerializeImpl(const std::unordered_map<K, V, H, E, A>& value) {
 		svh::json result = svh::json::object();
 		for (const auto& item : value) {
-			result[item.first] = svh::Serializer::ToJson(item.second);
+			if constexpr (svh::is_string_v<K>) {
+				result[item.first] = svh::Serializer::ToJson(item.second);
+			} else {
+				auto key = svh::Serializer::ToJson(item.first).dump();
+				result[key] = svh::Serializer::ToJson(item.second);
+			}
 		}
 		return result;
 	}
@@ -240,10 +250,22 @@ namespace std {
 			auto& key = item.key();
 			auto& val = item.value();
 			K k{};
-			svh::Deserializer::FromJson(key, k);
-			V v{};
-			svh::Deserializer::FromJson(val, v);
-			value.emplace(std::move(k), std::move(v));
+			if constexpr (svh::is_string_v<K>) {
+				k = key;
+			} else {
+				svh::Deserializer::FromJson(key, k);
+			}
+			if (val.is_array()) {
+				for (const auto& v : val) {
+					V temp_value{};
+					svh::Deserializer::FromJson(v, temp_value);
+					value.emplace(std::move(k), std::move(temp_value));
+				}
+			} else {
+				V temp_value{};
+				svh::Deserializer::FromJson(val, temp_value);
+				value.emplace(std::move(k), std::move(temp_value));
+			}
 		}
 	}
 
@@ -264,9 +286,17 @@ namespace std {
 			auto& val = item.value();
 			K k{};
 			svh::Deserializer::FromJson(key, k);
-			V v{};
-			svh::Deserializer::FromJson(val, v);
-			value.emplace(std::move(k), std::move(v));
+			if (val.is_array()) {
+				for (const auto& v : val) {
+					V temp_value{};
+					svh::Deserializer::FromJson(v, temp_value);
+					value.emplace(std::move(k), std::move(temp_value));
+				}
+			} else {
+				V temp_value{};
+				svh::Deserializer::FromJson(val, temp_value);
+				value.emplace(std::move(k), std::move(temp_value));
+			}
 		}
 	}
 

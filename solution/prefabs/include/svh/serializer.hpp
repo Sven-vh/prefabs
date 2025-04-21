@@ -143,7 +143,20 @@ namespace svh {
 		template<typename T>
 		static auto DeserializeImpl(const json& j, T& value)
 			-> enable_if_number<T, void> {
-			value = j.get<T>();
+			if (j.is_string()) {
+				std::string str = j.get<std::string>();
+				if constexpr (std::is_same_v<T, bool>) {
+					value = (str == "true");
+				} else if constexpr (std::is_floating_point_v<T>) {
+					value = static_cast<T>(std::stod(str));
+				} else if constexpr (std::is_integral_v<T>) {
+					value = static_cast<T>(std::stoll(str));
+				} else {
+					HandleError("Invalid number type", j);
+				}
+			} else {
+				value = j.get<T>();
+			}
 		}
 
 		/* For C-style arrays */
@@ -175,5 +188,12 @@ namespace svh {
 				HandleError("Invalid C-style string", j);
 			}
 		}
+	};
+
+	class Compare {
+	public:
+
+	private:
+		json result;
 	};
 }
