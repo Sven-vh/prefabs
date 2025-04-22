@@ -215,4 +215,10 @@ namespace svh {
 
 	template <typename T, typename R>
 	using enable_if_has_compare = std::enable_if_t<has_compare_v<T>, R>;
+
+	/* For json key names */
+	constexpr char REMOVED_INDICES[] = "removed indices";
+	constexpr char ADDED_VALUES[] = "added";
+	constexpr char INDEX[] = "index";
+	constexpr char VALUE[] = "value";
 }
