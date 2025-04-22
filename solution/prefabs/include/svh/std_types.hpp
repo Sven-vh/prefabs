@@ -592,7 +592,7 @@ namespace std {
 	static inline auto CompareImpl(
 		const Sequence& left,
 		const Sequence& right
-	) -> std::enable_if_t<svh::is_string_type_v<Sequence> == false, svh::json> {
+	) -> std::enable_if_t<svh::is_string_type_v<Sequence> == false && svh::has_begin_end_v<Sequence>, svh::json> {
 		using Elem = typename Sequence::value_type;
 
 		/* Run dtl to get changes */

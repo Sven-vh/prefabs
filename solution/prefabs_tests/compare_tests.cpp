@@ -880,49 +880,87 @@ public:
 	//	}
 	//	};
 	//
-	//	/* Test visitable structs */
-	//	TEST_CLASS(VisitableStructs) {
-	//public:
-	//	TEST_METHOD(TransformStruct) {
-	//		Transform t;
-	//		t.position = glm::vec3(1.0f, 2.0f, 3.0f);
-	//		t.rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
-	//		t.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-	//		CheckSerialization(t,
-	//			svh::json::object({
-	//				{"position", svh::json::array({1.0f,2.0f,3.0f})},
-	//				{"rotation", svh::json::array({0.0f,0.0f,0.0f,1.0f})},
-	//				{"scale",    svh::json::array({1.0f,1.0f,1.0f})}
-	//				})
-	//		);
-	//	}
-	//
-	//	TEST_METHOD(ItemHolderStruct) {
-	//		ItemHolder ih;
-	//		ih.item_count = 3;
-	//		ih.items = { 1, 2, 3 };
-	//		CheckSerialization(ih,
-	//			svh::json::object({
-	//				{"item_count", 3},
-	//				{"items", svh::json::array({1,2,3})}
-	//				})
-	//		);
-	//	}
-	//
-	//	TEST_METHOD(GameEntityStruct) {
-	//		GameEntity ge;
-	//		ge.name = "entity";
-	//		ge.transform = std::make_shared<Transform>();
-	//		ge.item_holder = std::make_shared<ItemHolder>();
-	//		CheckSerialization(ge,
-	//			svh::json::object({
-	//				{"name", "entity"},
-	//				{"transform", svh::Serializer::ToJson(ge.transform)},
-	//				{"item_holder", svh::Serializer::ToJson(ge.item_holder)}
-	//				})
-	//		);
-	//	}
-	//	};
+		/* Test visitable structs */
+	TEST_CLASS(VisitableStructs) {
+public:
+	TEST_METHOD(TransformStruct) {
+		Transform A;
+		A.position = { 1.0f, 2.0f, 3.0f };
+		A.rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+		A.scale = { 1.0f, 1.0f, 1.0f };
+
+		CheckCompare(A, A, svh::json());
+	}
+
+	TEST_METHOD(TransformStruct_Changed) {
+		Transform A;
+		A.position = { 1.0f, 2.0f, 3.0f };
+		A.rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+		A.scale = { 1.0f, 1.0f, 1.0f };
+		Transform B;
+		B.position = { 4.0f, 5.0f, 6.0f };
+		B.rotation = { 1.0f, 0.0f, 0.0f, 0.0f }; // rotation unchanged
+		B.scale = { 11.0f, 12.0f, 13.0f };
+		CheckCompare(A, B,
+			svh::json::object({
+				{"position", svh::json::array({4.0f,5.0f,6.0f})},
+				{"scale",    svh::json::array({11.0f,12.0f,13.0f})}
+				})
+		);
+	}
+
+	TEST_METHOD(ItemHolderStruct_Changed) {
+		//ItemHolder ih;
+		//ih.item_count = 3;
+		//ih.items = { 1, 2, 3 };
+		//CheckSerialization(ih,
+		//	svh::json::object({
+		//		{"item_count", 3},
+		//		{"items", svh::json::array({1,2,3})}
+		//		})
+		//);
+		ItemHolder A;
+		A.item_count = 3;
+		A.items = { 1, 2, 3 };
+		ItemHolder B;
+		B.item_count = 4;
+		B.items = { 1, 2, 3, 4 };
+		CheckCompare(A, B,
+			svh::json::object({
+				{"item_count", 4},
+				{"items", svh::Compare::GetChanges(A.items, B.items)}
+				})
+		);
+	}
+
+	TEST_METHOD(GameEntityStruct) {
+		//GameEntity ge;
+		//ge.name = "entity";
+		//ge.transform = std::make_shared<Transform>();
+		//ge.item_holder = std::make_shared<ItemHolder>();
+		//CheckSerialization(ge,
+		//	svh::json::object({
+		//		{"name", "entity"},
+		//		{"transform", svh::Serializer::ToJson(ge.transform)},
+		//		{"item_holder", svh::Serializer::ToJson(ge.item_holder)}
+		//		})
+		//);
+		GameEntity A;
+		A.name = "entity";
+		A.transform = std::make_shared<Transform>();
+		A.item_holder = std::make_shared<ItemHolder>();
+		GameEntity B;
+		B.name = "entity";
+		B.transform = std::make_shared<Transform>();
+		B.item_holder = std::make_shared<ItemHolder>();
+		CheckCompare(A, B,
+			svh::json::object({
+				{"transform", svh::Serializer::ToJson(A.transform)},
+				{"item_holder", svh::Serializer::ToJson(A.item_holder)}
+				})
+		);
+	}
+	};
 	//
 	//	TEST_CLASS(Inheritance) {
 	//public:
