@@ -142,6 +142,12 @@ namespace svh {
 	template<typename T>
 	constexpr bool is_string_v = std::is_same<T, std::string>::value;
 
+	template<typename T>
+	constexpr bool is_string_view_v = std::is_same<T, std::string_view>::value;
+
+	template<typename T>
+	constexpr bool is_string_type_v = is_string_v<T> || is_string_view_v<T>;
+
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected

@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prefabs", "prefabs\prefabs.vcxproj", "{6D347068-6722-4B6C-BDF6-8B0A9913FDD5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prefabs_tests", "prefabs_tests\prefabs_tests.vcxproj", "{D176E894-3098-486D-A2B3-94F6BAED409B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6D347068-6722-4B6C-BDF6-8B0A9913FDD5} = {6D347068-6722-4B6C-BDF6-8B0A9913FDD5}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
