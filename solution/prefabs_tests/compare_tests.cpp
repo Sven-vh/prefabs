@@ -1096,37 +1096,42 @@ public:
 		};
 		CheckCompare(arr, arr2, expected);
 	}
-	TEST_METHOD(CStyleArray_Added) {
-		int arr[] = { 20,21,22 };
-		int arr2[] = { 20,21,22,23 };
+	/* Added or Removed is maybe possible to compare but out of scope for this project*/
+
+	//	/* Not possible to make en empty C-style array */
+	//	TEST_METHOD(CStyleArrayOfArrays) {
+	//		int arr[2][2] = { {1,2}, {3,4} };
+	//		CheckSerialization(arr, svh::json::array({ {1,2}, {3,4} }));
+	//	}
+	TEST_METHOD(CStyleArrayOfArrays_Unchanged) {
+		int arr[2][2] = { {1,2}, {3,4} };
+		int arr2[2][2] = { {1,2}, {3,4} };
+		CheckCompare(arr, arr2, svh::json());
+	}
+	TEST_METHOD(CStyleArrayOfArrays_Changed) {
+		int arr[2][2] = { {1,2}, {3,4} };
+		int arr2[2][2] = { {5,6}, {7,8} };
 		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
 				  svh::json({
-					  { svh::INDEX, 3 },
-					  { svh::VALUE, 23 }
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
 				  })
 			  })
 			}
 		};
 		CheckCompare(arr, arr2, expected);
 	}
-	TEST_METHOD(CStyleArray_Removed) {
-		int arr[] = { 20,21,22 };
-		int arr2[] = { 20,21 };
-		svh::json expected = {
-			{ svh::REMOVED_INDICES,
-			  svh::json::array({ 2 })
-			}
-		};
-		CheckCompare(arr, arr2, expected);
-	}
-	//	/* Not possible to make en empty C-style array */
-	//	TEST_METHOD(CStyleArrayOfArrays) {
-	//		int arr[2][2] = { {1,2}, {3,4} };
-	//		CheckSerialization(arr, svh::json::array({ {1,2}, {3,4} }));
-	//	}
-	//
 	//	/* Forward lists */
 	//	TEST_METHOD(ForwardList) {
 	//		std::forward_list<int> fl{ 1,2,3 };

@@ -225,4 +225,34 @@ namespace svh {
 	/* Is sequence type*/
 	template<typename T>
 	constexpr bool is_sequence_v = has_begin_end_v<T> && !is_string_type_v<T>;
+
+	/* Is std::vector */
+	template<typename T> struct is_std_vector : std::false_type {};
+	template<typename U, typename A>
+	struct is_std_vector<std::vector<U, A>> : std::true_type {};
+	template<typename T>
+	inline constexpr bool is_std_vector_v = is_std_vector<
+		std::remove_cv_t<std::remove_reference_t<T>>
+	>::value;
+
+	/* convert to vector */
+	template<typename T>
+	auto to_std_vector(const T& x)
+		-> std::enable_if_t<!svh::is_sequence_v<T>, T> {
+		// atomic – not a container, just return as-is
+		return x;
+	}
+
+	//decltype(to_std_vector(*std::begin(s))) gets the type of the first element
+	template<typename Seq>
+	auto to_std_vector(const Seq& s)
+		-> std::enable_if_t<svh::is_sequence_v<Seq>, std::vector< decltype(to_std_vector(*std::begin(s)))>> {
+		using Inner = decltype(to_std_vector(*std::begin(s)));
+		std::vector<Inner> out;
+		out.reserve(std::distance(std::begin(s), std::end(s)));
+		for (auto const& e : s) {
+			out.push_back(to_std_vector(e));
+		}
+		return out;
+	}
 }

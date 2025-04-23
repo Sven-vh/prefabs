@@ -707,32 +707,12 @@ namespace std {
 	//	return result;
 	//}
 
-	template<typename T>
-	auto to_std_vector(const T& x)
-		-> std::enable_if_t<!svh::is_sequence_v<T>, T> {
-		// atomic – not a container, just return as-is
-		return x;
-	}
-
-	//decltype(to_std_vector(*std::begin(s))) gets the type of the first element
-	template<typename Seq>
-	auto to_std_vector(const Seq& s)
-		-> std::enable_if_t<svh::is_sequence_v<Seq>, std::vector< decltype(to_std_vector(*std::begin(s)))>> {
-		using Inner = decltype(to_std_vector(*std::begin(s)));
-		std::vector<Inner> out;
-		out.reserve(std::distance(std::begin(s), std::end(s)));
-		for (auto const& e : s) {
-			out.push_back(to_std_vector(e));
-		}
-		return out;
-	}
-
 	template<typename Sequence>
 	static inline auto CompareImpl(const Sequence& left, const Sequence& right)
-		-> std::enable_if_t<svh::is_sequence_v<Sequence>, svh::json> {
+		-> std::enable_if_t<svh::is_sequence_v<Sequence> && !svh::is_std_vector_v<Sequence>, svh::json> {
 		// Turn left+right into nested std::vector<…> at all depths:
-		auto l2 = to_std_vector(left);
-		auto r2 = to_std_vector(right);
+		auto l2 = svh::to_std_vector(left);
+		auto r2 = svh::to_std_vector(right);
 
 		// Now l2/r2 have type std::vector<…vector<…vector<Atomic>…>>
 		// and we dispatch into your real CompareImpl(std::vector<Elem>,…).
