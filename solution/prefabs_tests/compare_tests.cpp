@@ -1063,11 +1063,64 @@ public:
 	//		int arr[] = { 20,21,22 };
 	//		CheckSerialization(arr, svh::json::array({ 20,21,22 }));
 	//	}
-	//TEST_METHOD(CStyleArray_Unchanged) {
-	//	int arr[] = { 20,21,22 };
-	//	int arr2[] = { 20,21,22 };
-	//	CheckCompare(arr, arr2, svh::json());
-	//}
+	TEST_METHOD(CStyleArray_Unchanged) {
+		int arr[] = { 20,21,22 };
+		int arr2[] = { 20,21,22 };
+		CheckCompare(arr, arr2, svh::json());
+	}
+	TEST_METHOD(CStyleArray_Changed) {
+		int arr[] = { 20,21,22 };
+		int arr2[] = { 23,24,25 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 23 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 24 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 25 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(arr, arr2, expected);
+	}
+	TEST_METHOD(CStyleArray_Added) {
+		int arr[] = { 20,21,22 };
+		int arr2[] = { 20,21,22,23 };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 3 },
+					  { svh::VALUE, 23 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(arr, arr2, expected);
+	}
+	TEST_METHOD(CStyleArray_Removed) {
+		int arr[] = { 20,21,22 };
+		int arr2[] = { 20,21 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 2 })
+			}
+		};
+		CheckCompare(arr, arr2, expected);
+	}
 	//	/* Not possible to make en empty C-style array */
 	//	TEST_METHOD(CStyleArrayOfArrays) {
 	//		int arr[2][2] = { {1,2}, {3,4} };

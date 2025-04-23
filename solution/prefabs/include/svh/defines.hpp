@@ -221,4 +221,8 @@ namespace svh {
 	constexpr char ADDED_VALUES[] = "added";
 	constexpr char INDEX[] = "index";
 	constexpr char VALUE[] = "value";
+
+	/* Is sequence type*/
+	template<typename T>
+	constexpr bool is_sequence_v = has_begin_end_v<T> && !is_string_type_v<T>;
 }
