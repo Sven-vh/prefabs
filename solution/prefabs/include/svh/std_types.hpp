@@ -706,4 +706,117 @@ namespace std {
 		if (!added_json.empty())   result[svh::ADDED_VALUES] = std::move(added_json);
 		return result;
 	}
+
+	/* For std::set */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::set<T>& left, const std::set<T>& right) {
+		svh::json result = svh::Compare::GetChanges(std::vector<T>(left.begin(), left.end()), std::vector<T>(right.begin(), right.end()));
+		return result;
+	}
+
+	/* For std::unordered_set */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::unordered_set<T>& left, const std::unordered_set<T>& right) {
+		svh::json result = svh::Compare::GetChanges(std::vector<T>(left.begin(), left.end()), std::vector<T>(right.begin(), right.end()));
+		return result;
+	}
+
+	/* For std::multiset */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::multiset<T>& left, const std::multiset<T>& right) {
+		svh::json result = svh::Compare::GetChanges(std::vector<T>(left.begin(), left.end()), std::vector<T>(right.begin(), right.end()));
+		return result;
+	}
+
+	/* For std::unordered_multiset */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::unordered_multiset<T>& left, const std::unordered_multiset<T>& right) {
+		svh::json result = svh::Compare::GetChanges(std::vector<T>(left.begin(), left.end()), std::vector<T>(right.begin(), right.end()));
+		return result;
+	}
+
+	/* For std::initializer_list */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::initializer_list<T>& left, const std::initializer_list<T>& right) {
+		svh::json result = svh::Compare::GetChanges(std::vector<T>(left), std::vector<T>(right));
+		return result;
+	}
+
+	/* For std::list */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::list<T>& left, const std::list<T>& right) {
+		svh::json result = svh::Compare::GetChanges(std::vector<T>(left.begin(), left.end()), std::vector<T>(right.begin(), right.end()));
+		return result;
+	}
+
+	/* For unique pointers */
+	template<typename T, typename Deleter>
+	static inline svh::json CompareImpl(const std::unique_ptr<T, Deleter>& left, const std::unique_ptr<T, Deleter>& right) {
+		if (!left && !right) {
+			return {};
+		} else if (!left || !right) {
+			svh::Deserializer::HandleError("unique_ptr", svh::json());
+			return {};
+		} else {
+			return svh::Compare::GetChanges(*left, *right);
+		}
+	}
+
+	/* For shared pointers */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::shared_ptr<T>& left, const std::shared_ptr<T>& right) {
+		if (!left && !right) {
+			return {};
+		} else if (!left || !right) {
+			svh::Deserializer::HandleError("shared_ptr", svh::json());
+			return {};
+		} else {
+			return svh::Compare::GetChanges(*left, *right);
+		}
+	}
+
+	/* For weak pointers */
+	template<typename T>
+	static inline svh::json CompareImpl(const std::weak_ptr<T>& left, const std::weak_ptr<T>& right) {
+		if (auto sp_left = left.lock()) {
+			if (auto sp_right = right.lock()) {
+				return svh::Compare::GetChanges(*sp_left, *sp_right);
+			} else {
+				svh::Deserializer::HandleError("weak_ptr", svh::json());
+				return {};
+			}
+		} else {
+			svh::Deserializer::HandleError("weak_ptr", svh::json());
+			return {};
+		}
+	}
+
+	/* For shared pointers (with custom deleter) */
+	template<typename T, typename Deleter>
+	static inline svh::json CompareImpl(const std::shared_ptr<T>& left, const std::shared_ptr<T>& right) {
+		if (!left && !right) {
+			return {};
+		} else if (!left || !right) {
+			svh::Deserializer::HandleError("shared_ptr", svh::json());
+			return {};
+		} else {
+			return svh::Compare::GetChanges(*left, *right);
+		}
+	}
+
+	/* For weak pointers (with custom deleter) */
+	template<typename T, typename Deleter>
+	static inline svh::json CompareImpl(const std::weak_ptr<T>& left, const std::weak_ptr<T>& right) {
+		if (auto sp_left = left.lock()) {
+			if (auto sp_right = right.lock()) {
+				return svh::Compare::GetChanges(*sp_left, *sp_right);
+			} else {
+				svh::Deserializer::HandleError("weak_ptr", svh::json());
+				return {};
+			}
+		} else {
+			svh::Deserializer::HandleError("weak_ptr", svh::json());
+			return {};
+		}
+	}
 }

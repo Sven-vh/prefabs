@@ -164,7 +164,7 @@ public:
 		std::vector<int> right{ 1,2,3 };
 		CheckCompare(left, right, svh::json());
 	}
-	TEST_METHOD(ChangedVector) {
+	TEST_METHOD(Vector_Changed) {
 		std::vector<int> left{ 1,2,3 };
 		std::vector<int> right{ 4,5,6 };
 		svh::json expected = {
@@ -192,7 +192,7 @@ public:
 		};
 		CheckCompare(left, right, expected);
 	}
-	TEST_METHOD(AddedVector) {
+	TEST_METHOD(Vector_Added) {
 		std::vector<int> left{ 1,2,3 };
 		std::vector<int> right{ 1,2,3,4 };
 
@@ -571,88 +571,503 @@ public:
 		CheckCompare(a, b, expected);
 	}
 
-	//
-	//	/* Sets */
-	//	TEST_METHOD(Set) {
-	//		std::set<int> s{ 5,6,7 };
-	//		CheckSerialization(s, svh::json::array({ 5,6,7 }));
-	//	}
-	//	TEST_METHOD(EmptySet) {
-	//		std::set<std::string> s;
-	//		CheckSerialization(s, svh::json::array({}));
-	//	}
-	//	TEST_METHOD(SetOfSets) {
-	//		std::set<std::set<int>> ss{ {1,2}, {3,4} };
-	//		CheckSerialization(ss, svh::json::array({ {1,2}, {3,4} }));
-	//	}
-	//	/* Unordered sets */
-	//	TEST_METHOD(UnorderedSet) {
-	//		std::unordered_set<int> us{ 8,9,10 };
-	//		CheckSerialization(us, svh::json::array({ 8,9,10 }));
-	//	}
-	//	TEST_METHOD(EmptyUnorderedSet) {
-	//		std::unordered_set<std::string> us;
-	//		CheckSerialization(us, svh::json::array({}));
-	//	}
-	//	/* No default hash function for unordered_set of unordered_set */
-	//
-	//	/* Multisets */
-	//	TEST_METHOD(Multiset) {
-	//		std::multiset<int> ms{ 1,2,2,3 };
-	//		CheckSerialization(ms, svh::json::array({ 1,2,2,3 }));
-	//	}
-	//	TEST_METHOD(UnorderedMultiset) {
-	//		std::unordered_multiset<std::string> ums{ "a","b","a" };
-	//		CheckSerialization(ums, svh::json::array({ "a","a","b" })); // order not guaranteed
-	//	}
+	/* Sets */
+	TEST_METHOD(Set_Unchanged) {
+		/*std::set<int> s{ 5,6,7 };
+		CheckSerialization(s, svh::json::array({ 5,6,7 }));*/
+		std::set<int> A{ 5,6,7 };
+		std::set<int> B{ 5,6,7 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Set_Changed) {
+		std::set<int> A{ 5,6,7 };
+		std::set<int> B{ 8,9,10 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 8 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 9 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 10 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	//TEST_METHOD(SetOfSets) {
+	//	std::set<std::set<int>> ss{ {1,2}, {3,4} };
+	//	CheckSerialization(ss, svh::json::array({ {1,2}, {3,4} }));
+	//}
+	TEST_METHOD(SetOfSets_Unchanged) {
+		std::set<std::set<int>> A{ {1,2}, {3,4} };
+		std::set<std::set<int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(SetOfSets_Changed) {
+		std::set<std::set<int>> A{ {1,2}, {3,4} };
+		std::set<std::set<int>> B{ {5,6}, {7,8} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	///* Unordered sets */
+	//TEST_METHOD(UnorderedSet) {
+	//	std::unordered_set<int> us{ 8,9,10 };
+	//	CheckSerialization(us, svh::json::array({ 8,9,10 }));
+	//}
+	TEST_METHOD(UnorderedSet_Unchanged) {
+		std::unordered_set<int> A{ 8,9,10 };
+		std::unordered_set<int> B{ 8,9,10 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(UnorderedSet_Changed) {
+		std::unordered_set<int> A{ 8,9,10 };
+		std::unordered_set<int> B{ 11,12,13 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 11 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 12 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 13 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	// 
+	//TEST_METHOD(EmptyUnorderedSet) {
+	//	std::unordered_set<std::string> us;
+	//	CheckSerialization(us, svh::json::array({}));
+	//}
+	///* No default hash function for unordered_set of unordered_set */
+
+	///* Multisets */
+	//TEST_METHOD(Multiset) {
+	//	std::multiset<int> ms{ 1,2,2,3 };
+	//	CheckSerialization(ms, svh::json::array({ 1,2,2,3 }));
+	//}
+	TEST_METHOD(Multiset_Unchanged) {
+		std::multiset<int> A{ 1,2,2,3 };
+		std::multiset<int> B{ 1,2,2,3 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Multiset_Changed) {
+		std::multiset<int> A{ 1,2,2,3 };
+		std::multiset<int> B{ 4,5,6 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2,3
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 4 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 5 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 6 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(MultisetOfMultisets_Changed) {
+		std::multiset<std::multiset<int>> A{ {1,2}, {3,4} };
+		std::multiset<std::multiset<int>> B{ {5,6}, {7,8} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	//TEST_METHOD(UnorderedMultiset) {
+	//	std::unordered_multiset<std::string> ums{ "a","b","a" };
+	//	CheckSerialization(ums, svh::json::array({ "a","a","b" })); // order not guaranteed
+	//}
+	TEST_METHOD(UnorderedMultiset_Unchanged) {
+		std::unordered_multiset<std::string> A{ "a","b","a" };
+		std::unordered_multiset<std::string> B{ "a","b","a" };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(UnorderedMultiset_Changed) {
+		std::unordered_multiset<std::string> A{ "a","b","a" };
+		std::unordered_multiset<std::string> B{ "c","d","e" };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, "c" }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, "d" }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, "e" }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
 	//
 	//	/* Deques */
 	//	TEST_METHOD(Deque) {
 	//		std::deque<int> d{ 11,12,13 };
 	//		CheckSerialization(d, svh::json::array({ 11,12,13 }));
 	//	}
-	//	TEST_METHOD(EmptyDeque) {
-	//		std::deque<std::string> d;
-	//		CheckSerialization(d, svh::json::array({}));
-	//	}
-	//	TEST_METHOD(DequeOfDeques) {
-	//		std::deque<std::deque<int>> dd{ {1,2}, {3,4} };
-	//		CheckSerialization(dd, svh::json::array({ {1,2}, {3,4} }));
-	//	}
-	//
+	TEST_METHOD(Deque_Unchanged) {
+		std::deque<int> A{ 11,12,13 };
+		std::deque<int> B{ 11,12,13 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Deque_Changed) {
+		std::deque<int> A{ 11,12,13 };
+		std::deque<int> B{ 14,15,16 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 14 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 15 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 16 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(Deque_Added) {
+		std::deque<int> A{ 11,12,13 };
+		std::deque<int> B{ 11,12,13,14 };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 3 },
+					  { svh::VALUE, 14 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(Deque_Removed) {
+		std::deque<int> A{ 11,12,13 };
+		std::deque<int> B{ 11,12 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 2 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(DequeOfDeques_Unchanged) {
+		std::deque<std::deque<int>> A{ {1,2}, {3,4} };
+		std::deque<std::deque<int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(DequeOfDeques_Changed) {
+		std::deque<std::deque<int>> A{ {1,2}, {3,4} };
+		std::deque<std::deque<int>> B{ {5,6}, {7,8} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
 	//	/* Lists */
 	//	TEST_METHOD(List) {
 	//		std::list<int> l{ 14,15,16 };
 	//		CheckSerialization(l, svh::json::array({ 14,15,16 }));
 	//	}
-	//	TEST_METHOD(EmptyList) {
-	//		std::list<std::string> l;
-	//		CheckSerialization(l, svh::json::array({}));
-	//	}
-	//	TEST_METHOD(ListOfLists) {
-	//		std::list<std::list<int>> ll{ {1,2}, {3,4} };
-	//		CheckSerialization(ll, svh::json::array({ {1,2}, {3,4} }));
-	//	}
-	//
-	//	/* Initializer lists */
-	//	TEST_METHOD(InitializerList) {
-	//		std::initializer_list<int> il{ 17,18,19 };
-	//		CheckSerialization(il, svh::json::array({ 17,18,19 }));
-	//	}
-	//	TEST_METHOD(EmptyInitializerList) {
-	//		std::initializer_list<std::string> il{};
-	//		CheckSerialization(il, svh::json::array({}));
-	//	}
-	//	TEST_METHOD(InitializerListOfLists) {
-	//		std::initializer_list<std::initializer_list<int>> ill{ {1,2}, {3,4} };
-	//		CheckSerialization(ill, svh::json::array({ {1,2}, {3,4} }));
-	//	}
-	//
+	TEST_METHOD(List_Unchanged) {
+		std::list<int> A{ 14,15,16 };
+		std::list<int> B{ 14,15,16 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(List_Changed) {
+		std::list<int> A{ 14,15,16 };
+		std::list<int> B{ 17,18,19 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 17 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 18 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 19 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(List_Added) {
+		std::list<int> A{ 14,15,16 };
+		std::list<int> B{ 14,15,16,17 };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 3 },
+					  { svh::VALUE, 17 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(List_Removed) {
+		std::list<int> A{ 14,15,16 };
+		std::list<int> B{ 14,15 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 2 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(ListOfLists_Unchanged) {
+		std::list<std::list<int>> A{ {1,2}, {3,4} };
+		std::list<std::list<int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(ListOfLists_Changed) {
+		std::list<std::list<int>> A{ {1,2}, {3,4} };
+		std::list<std::list<int>> B{ {5,6}, {7,8} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+
+	/* Initializer lists */
+	TEST_METHOD(InitializerList_Unchanged) {
+		std::initializer_list<int> A{ 17,18,19 };
+		std::initializer_list<int> B{ 17,18,19 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(InitializerList_Changed) {
+		std::initializer_list<int> A{ 17,18,19 };
+		std::initializer_list<int> B{ 20,21,22 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 20 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 21 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 22 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(InitializerList_Added) {
+		std::initializer_list<int> A{ 17,18,19 };
+		std::initializer_list<int> B{ 17,18,19,20 };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 3 },
+					  { svh::VALUE, 20 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(InitializerList_Removed) {
+		std::initializer_list<int> A{ 17,18,19 };
+		std::initializer_list<int> B{ 17,18 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 2 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(InitializerListOfLists_Unchanged) {
+		std::initializer_list<std::initializer_list<int>> A{ {1,2}, {3,4} };
+		std::initializer_list<std::initializer_list<int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(InitializerListOfLists_Changed) {
+		std::initializer_list<std::initializer_list<int>> A{ {1,2}, {3,4} };
+		std::initializer_list<std::initializer_list<int>> B{ {5,6}, {7,8} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
 	//	/* C-style arrays */
 	//	TEST_METHOD(CStyleArray) {
 	//		int arr[] = { 20,21,22 };
 	//		CheckSerialization(arr, svh::json::array({ 20,21,22 }));
 	//	}
+	//TEST_METHOD(CStyleArray_Unchanged) {
+	//	int arr[] = { 20,21,22 };
+	//	int arr2[] = { 20,21,22 };
+	//	CheckCompare(arr, arr2, svh::json());
+	//}
 	//	/* Not possible to make en empty C-style array */
 	//	TEST_METHOD(CStyleArrayOfArrays) {
 	//		int arr[2][2] = { {1,2}, {3,4} };
@@ -933,7 +1348,7 @@ public:
 		);
 	}
 
-	TEST_METHOD(GameEntityStruct) {
+	TEST_METHOD(GameEntityStruct_Unchanged) {
 		//GameEntity ge;
 		//ge.name = "entity";
 		//ge.transform = std::make_shared<Transform>();
@@ -953,166 +1368,182 @@ public:
 		B.name = "entity";
 		B.transform = std::make_shared<Transform>();
 		B.item_holder = std::make_shared<ItemHolder>();
+		CheckCompare(A, B, svh::json()); // returns empty since the values inside the pointers are the same
+	}
+
+	TEST_METHOD(GameEntityStruct_Changed) {
+		GameEntity A;
+		A.name = "entity";
+		A.transform = std::make_shared<Transform>();
+		A.item_holder = std::make_shared<ItemHolder>();
+		GameEntity B;
+		B.name = "entity";
+		B.transform = std::make_shared<Transform>();
+		B.transform->position = { 1.0f, 2.0f, 3.0f };
+		B.item_holder = std::make_shared<ItemHolder>();
+		B.item_holder->item_count = 69;
 		CheckCompare(A, B,
 			svh::json::object({
-				{"transform", svh::Serializer::ToJson(A.transform)},
-				{"item_holder", svh::Serializer::ToJson(A.item_holder)}
+				{"transform", svh::json::object({
+					{"position", svh::json::array({1.0f,2.0f,3.0f})}
+					})},
+				{"item_holder", svh::json::object({
+					{"item_count", 69}
+					})}
 				})
 		);
 	}
 	};
 	//
-	//	TEST_CLASS(Inheritance) {
-	//public:
-	//	TEST_METHOD(InheritedComponent) {
-	//		DerivedComponent mc;
-	//		mc.name = "Test";
-	//		mc.value = 42;
-	//		mc.id = 0;
-	//		CheckSerialization(mc,
-	//			svh::json::object({
-	//				{"name", "Test"},
-	//				{"value",42},
-	//				{"id", 0}
-	//				})
-	//		);
-	//	}
+	TEST_CLASS(Inheritance) {
+public:
+	TEST_METHOD(InheritedComponent_Unchanged) {
+		DerivedComponent A;
+		A.name = "Test";
+		A.value = 42;
+		A.id = 0;
+		DerivedComponent B;
+		B.name = "Test";
+		B.value = 42;
+		B.id = 0;
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(InheritedComponent_Changed) {
+		DerivedComponent A;
+		A.name = "Test";
+		A.value = 42;
+		A.id = 0;
+		DerivedComponent B;
+		B.name = "Test";
+		B.value = 43; // changed
+		B.id = 0;
+		CheckCompare(A, B,
+			svh::json::object({
+				{"value", 43}
+				})
+		);
+	}
+
+	TEST_METHOD(BaseComponentTest_Unchanged) {
+		BaseComponent* A = new DerivedComponent();
+		A->id = 1;
+		BaseComponent* B = new DerivedComponent();
+		B->id = 1;
+
+		CheckCompare(*A, *B, svh::json());
+		delete A;
+		delete B;
+	}
+
+	TEST_METHOD(BaseComponentTest_Changed) {
+		BaseComponent* A = new DerivedComponent();
+		A->id = 1;
+		BaseComponent* B = new DerivedComponent();
+		B->id = 2;
+		CheckCompare(*A, *B,
+			svh::json::object({
+				{"id", 2}
+				})
+		);
+		delete A;
+		delete B;
+	}
+	};
 	//
-	//	TEST_METHOD(BaseComponentTest) {
-	//		BaseComponent* bc = new DerivedComponent();
-	//		bc->id = 1;
-	//		CheckSerialization(*bc,
-	//			svh::json::object({
-	//				{"id", 1}
-	//				})
-	//		);
-	//	}
-	//	};
-	//
-	//	/* Test larger integer types */
-	//	TEST_CLASS(LargerIntegerTypes) {
-	//public:
-	//	TEST_METHOD(LongLong) {
-	//		long long ll = 123456789012345LL;
-	//		CheckSerialization(ll, svh::json(123456789012345LL));
-	//	}
-	//	TEST_METHOD(LongLongMin) {
-	//		long long ll = std::numeric_limits<long long>::min();
-	//		CheckSerialization(ll, svh::json(std::numeric_limits<long long>::min()));
-	//	}
-	//	TEST_METHOD(LongLongMax) {
-	//		long long ll = std::numeric_limits<long long>::max();
-	//		CheckSerialization(ll, svh::json(std::numeric_limits<long long>::max()));
-	//	}
-	//
-	//	// unsigned long long
-	//	TEST_METHOD(UnsignedLongLong) {
-	//		unsigned long long ull = 123456789012345ULL;
-	//		CheckSerialization(ull, svh::json(123456789012345ULL));
-	//	}
-	//	TEST_METHOD(UnsignedLongLongMax) {
-	//		unsigned long long ull = std::numeric_limits<unsigned long long>::max();
-	//		CheckSerialization(ull, svh::json(std::numeric_limits<unsigned long long>::max()));
-	//	}
-	//
-	//	// size_t
-	//	TEST_METHOD(SizeT) {
-	//		std::size_t sz = 1234567890ULL;
-	//		CheckSerialization(sz, svh::json(1234567890ULL));
-	//	}
-	//	TEST_METHOD(SizeTMax) {
-	//		std::size_t sz = std::numeric_limits<std::size_t>::max();
-	//		CheckSerialization(sz, svh::json(std::numeric_limits<std::size_t>::max()));
-	//	}
-	//	};
-	//
-	//	/* Test complex nested structures */
-	//	TEST_CLASS(ComplexNestedTest) {
-	//public:
-	//	TEST_METHOD(PlayerEntitySerialization) {
-	//		// Build a deeply nested object
-	//		auto transform = std::make_shared<Transform>();
-	//		transform->position = { 1.0f, 2.0f, 3.0f };
-	//		transform->rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
-	//		transform->scale = { 1.0f, 1.0f, 1.0f };
-	//
-	//		Inventory inv;
-	//		inv.items = { "potion", "elixir" };
-	//		inv.ammo = { {"arrows", 20} };
-	//		inv.misc = { "key", "map" };
-	//
-	//		// Create weapons using moves
-	//		auto w1 = std::make_unique<Weapon>();
-	//		w1->name = "Sword"; w1->damage = 10;
-	//		auto w2 = std::make_unique<Weapon>();
-	//		w2->name = "Bow";   w2->damage = 7;
-	//
-	//		// Create armors
-	//		auto a1 = std::make_shared<Armor>();
-	//		a1->name = "Helmet"; a1->defense = 5;
-	//		auto a2 = std::make_shared<Armor>();
-	//		a2->name = "Armor";  a2->defense = 15;
-	//
-	//		// Setup skill tree
-	//		Skill s1; s1.name = "Fireball"; s1.level = 3;
-	//		Skill s2; s2.name = "IceShard"; s2.level = 2;
-	//		s2.subskills.push_back(Skill{ "Freeze", 1, {} });
-	//		SkillTree st; st.skills = { s1, s2 };
-	//
-	//		PlayerEntity player;
-	//		player.id = "player1";
-	//		player.transform = transform;
-	//		player.inventory = inv;
-	//
-	//		// Assign weapons explicitly (unique_ptr cannot be copied)
-	//		player.weapons.clear();
-	//		player.weapons.push_back(std::move(w1));
-	//		player.weapons.push_back(std::move(w2));
-	//
-	//		player.armors = { { "head", a1 }, { "body", a2 } };
-	//		player.skill_tree = st;
-	//
-	//		// Expected JSON
-	//		svh::json expected = svh::json::object({
-	//			{ "id", "player1" },
-	//			{ "transform", svh::json::object({
-	//				{ "position", svh::json::array({1.0f,2.0f,3.0f}) },
-	//				{ "rotation", svh::json::array({0.0f,0.0f,0.0f,1.0f}) },
-	//				{ "scale",    svh::json::array({1.0f,1.0f,1.0f}) }
-	//			})},
-	//			{ "inventory", svh::json::object({
-	//				{ "items", svh::json::array({"potion","elixir"}) },
-	//				{ "ammo",  svh::json::object({{"arrows",20}}) },
-	//				{ "misc",  svh::json::array({"key","map"}) }
-	//			})},
-	//			{ "weapons", svh::json::array({
-	//				svh::json::object({{"name","Sword"},{"damage",10}}),
-	//				svh::json::object({{"name","Bow"},{"damage",7}})
-	//			})},
-	//			{ "armors", svh::json::object({
-	//				{ "body", svh::json::object({{"name","Armor"},{"defense",15}}) },
-	//				{ "head", svh::json::object({{"name","Helmet"},{"defense",5}}) }
-	//			})},
-	//			{ "skill_tree", svh::json::object({
-	//				{ "skills", svh::json::array({
-	//					svh::json::object({
-	//						{"name","Fireball"},
-	//						{"level",3},
-	//						{"subskills", svh::json::array({})}
-	//					}),
-	//					svh::json::object({
-	//						{"name","IceShard"},
-	//						{"level",2},
-	//						{"subskills", svh::json::array({
-	//							svh::json::object({{"name","Freeze"},{"level",1},{"subskills",svh::json::array({})}})
-	//						})}
-	//					})
-	//				})}
-	//			})}
-	//			});
-	//
-	//		CheckSerialization(player, expected);
-	//	}
-	//	};
+		/* Test larger integer types */
+	TEST_CLASS(LargerIntegerTypes) {
+public:
+	TEST_METHOD(LongLong_Unchanged) {
+		long long A = 123456789012345LL;
+		long long B = 123456789012345LL;
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(LongLong_Changed) {
+		long long A = 123456789012345LL;
+		long long B = 123456789012346LL;
+		CheckCompare(A, B, svh::json(123456789012346LL));
+	}
+
+	// unsigned long long
+	TEST_METHOD(UnsignedLongLong_Unchanged) {
+		unsigned long long ull = 123456789012345ULL;
+		unsigned long long ull2 = 123456789012345ULL;
+		CheckCompare(ull, ull2, svh::json());
+	}
+	TEST_METHOD(UnsignedLongLong_Changed) {
+		unsigned long long ull = 123456789012345ULL;
+		unsigned long long ull2 = 123456789012346ULL;
+		CheckCompare(ull, ull2, svh::json(123456789012346ULL));
+	}
+
+	// size_t
+	TEST_METHOD(SizeT_Unchanged) {
+		std::size_t sz = 123456789012345ULL;
+		std::size_t sz2 = 123456789012345ULL;
+		CheckCompare(sz, sz2, svh::json());
+	}
+	TEST_METHOD(SizeT_Changed) {
+		std::size_t sz = 123456789012345ULL;
+		std::size_t sz2 = 123456789012346ULL;
+		CheckCompare(sz, sz2, svh::json(123456789012346ULL));
+	}
+	};
+
+	PlayerEntity CreateComplexNestedObject() {
+		auto transform = std::make_shared<Transform>();
+		transform->position = { 1.0f, 2.0f, 3.0f };
+		transform->rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+		transform->scale = { 1.0f, 1.0f, 1.0f };
+		Inventory inv;
+		inv.items = { "potion", "elixir" };
+		inv.ammo = { {"arrows", 20} };
+		inv.misc = { "key", "map" };
+		auto w1 = std::make_unique<Weapon>();
+		w1->name = "Sword"; w1->damage = 10;
+		auto w2 = std::make_unique<Weapon>();
+		w2->name = "Bow";   w2->damage = 7;
+		auto a1 = std::make_shared<Armor>();
+		a1->name = "Helmet"; a1->defense = 5;
+		auto a2 = std::make_shared<Armor>();
+		a2->name = "Armor";  a2->defense = 15;
+		Skill s1; s1.name = "Fireball"; s1.level = 3;
+		Skill s2; s2.name = "IceShard"; s2.level = 2;
+		s2.subskills.push_back(Skill{ "Freeze", 1, {} });
+		SkillTree st; st.skills = { s1, s2 };
+		PlayerEntity player;
+		player.id = "player1";
+		player.transform = transform;
+		player.inventory = inv;
+		player.weapons.clear();
+		player.weapons.push_back(std::move(w1));
+		player.weapons.push_back(std::move(w2));
+		player.armors = { { "head", a1 }, { "body", a2 } };
+		player.skill_tree = st;
+		return player;
+	}
+	/* Test complex nested structures */
+//	TEST_CLASS(ComplexNestedTest) {
+//public:
+//	TEST_METHOD(PlayerEntitySerialization_UnChanged) {
+//		auto A = CreateComplexNestedObject();
+//		auto B = CreateComplexNestedObject();
+//		CheckCompare(A, B, svh::json());
+//	}
+//
+//	TEST_METHOD(PlayerEntitySerialization_Changed) {
+//		auto A = CreateComplexNestedObject();
+//		auto B = CreateComplexNestedObject();
+//		B.weapons[0]->damage = 20;
+//		CheckCompare(A, B,
+//			svh::json::object({
+//				{"weapons", svh::json::array({
+//					svh::json::object({
+//						{"damage", 20}
+//						})
+//					})}
+//				})
+//		);
+//	}
+//	};
 
 } // namespace prefabstests
