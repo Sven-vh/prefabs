@@ -222,6 +222,16 @@ namespace svh {
 			return UserDefinedCompareImpl(left, right);
 		}
 
+		/* For C-style arrays */
+		template<typename T, std::size_t N>
+		static auto GetChangesImpl(const T(&left)[N], const T(&right)[N])
+			-> std::enable_if_t< !is_visitable_v<T> && !has_compare_v<T>, json> {
+			auto l2 = svh::to_std_vector(left);
+			auto r2 = svh::to_std_vector(right);
+
+			return GetChangesImpl(l2, r2);
+		}
+
 		/* For anything else */
 		template<typename T>
 		static auto GetChangesImpl(const T& left, const T& right)
