@@ -173,6 +173,10 @@ namespace svh {
 	template<typename T, typename R = void>
 	using enable_if_pointer_like = std::enable_if_t<is_pointer_like_v<T>, R>;
 
+	// detect std::tuple
+	template<typename T>
+	constexpr bool is_std_tuple_v = is_specialization<T, std::tuple>::value;
+
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected
@@ -265,7 +269,7 @@ namespace svh {
 	/* convert to vector */
 	template<typename T>
 	auto to_std_vector(const T& x)
-		-> std::enable_if_t<!svh::is_sequence_v<T>, T> {
+		-> std::enable_if_t<!svh::is_sequence_v<T> && !svh::is_std_tuple_v<T>, T> {
 		// atomic – not a container, just return as-is
 		return x;
 	}
@@ -282,4 +286,26 @@ namespace svh {
 		}
 		return out;
 	}
+
+	/*to_std_vector for tuples*/
+	template<typename Tuple, std::size_t... I>
+	auto to_std_vector_impl(const Tuple& t, std::index_sequence<I...>)
+		-> std::vector<
+		std::common_type_t<
+		decltype(to_std_vector(std::get<I>(t)))...
+		>
+		> {
+		using Inner = std::common_type_t<decltype(to_std_vector(std::get<I>(t)))...>;
+		return std::vector<Inner>{ to_std_vector(std::get<I>(t))... };
+	}
+
+	template<typename... Args>
+	auto to_std_vector(const std::tuple<Args...>& t)
+		-> std::enable_if_t < (sizeof...(Args) > 0),
+		decltype(to_std_vector_impl(t, std::index_sequence_for<Args...>{}))
+		>
+	{
+		return to_std_vector_impl(t, std::index_sequence_for<Args...>{});
+	}
+
 }

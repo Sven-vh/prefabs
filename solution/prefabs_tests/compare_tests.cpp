@@ -493,25 +493,26 @@ public:
 	TEST_METHOD(ChangedArray) {
 		std::array<float, 3> a{ {1.0f,2.0f,3.0f} };
 		std::array<float, 3> b{ {4.0f,5.0f,6.0f} };
+		// {"removed indices":[[0],[1],[2]],"added":[{"index":[0],"value":4.0},{"index":[1],"value":5.0},{"index":[2],"value":6.0}]}
 		svh::json expected = {
 			{ svh::REMOVED_INDICES,
 			  svh::json::array({
-				  0,1,2
+				  {0},{1},{2}
 			  })
 			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
 				  svh::json({
-					  { svh::INDEX, 0 },
-					  { svh::VALUE, 4.0f }
+					  { svh::INDEX, {0} },
+					  { svh::VALUE, 4.0 }
 				  }),
 				  svh::json({
-					  { svh::INDEX, 1 },
-					  { svh::VALUE, 5.0f }
+					  { svh::INDEX, {1} },
+					  { svh::VALUE, 5.0 }
 				  }),
 				  svh::json({
-					  { svh::INDEX, 2 },
-					  { svh::VALUE, 6.0f }
+					  { svh::INDEX, {2} },
+					  { svh::VALUE, 6.0 }
 				  })
 			  })
 			}
@@ -1074,21 +1075,21 @@ public:
 		svh::json expected = {
 			{ svh::REMOVED_INDICES,
 			  svh::json::array({
-				  0,1,2
+				  {0},{1},{2}
 			  })
 			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
 				  svh::json({
-					  { svh::INDEX, 0 },
+					  { svh::INDEX, {0} },
 					  { svh::VALUE, 23 }
 				  }),
 				  svh::json({
-					  { svh::INDEX, 1 },
+					  { svh::INDEX, {1} },
 					  { svh::VALUE, 24 }
 				  }),
 				  svh::json({
-					  { svh::INDEX, 2 },
+					  { svh::INDEX, {2} },
 					  { svh::VALUE, 25 }
 				  })
 			  })
@@ -1628,7 +1629,8 @@ public:
 	TEST_METHOD(Pair_Changed) {
 		std::pair<int, int> A{ 1,2 };
 		std::pair<int, int> B{ 1,4 };
-		svh::json expected = svh::json({ 1,4 });
+		//{"second":4}
+		svh::json expected = svh::json({ { svh::SECOND, 4 } });
 		CheckCompare(A, B, expected);
 	}
 	TEST_METHOD(PairOfPairs_Unchanged) {
@@ -1639,7 +1641,8 @@ public:
 	TEST_METHOD(PairOfPairs_Changed) {
 		std::pair<std::pair<int, int>, std::pair<int, int>> A{ {1,2}, {3,4} };
 		std::pair<std::pair<int, int>, std::pair<int, int>> B{ {5,6}, {7,8} };
-		svh::json expected = svh::json({ { 5,6 }, { 7,8 } });
+		//{"first":{"first":5,"second":6},"second":{"first":7,"second":8}}
+		svh::json expected = svh::json({ { svh::FIRST, { { svh::FIRST, 5 }, { svh::SECOND, 6 } } }, { svh::SECOND, { { svh::FIRST, 7 }, { svh::SECOND, 8 } } } });
 		CheckCompare(A, B, expected);
 	}
 
@@ -1652,7 +1655,20 @@ public:
 	TEST_METHOD(Tuple_Changed) {
 		std::tuple<int, int> A{ 1,2 };
 		std::tuple<int, int> B{ 1,4 };
-		svh::json expected = svh::json({ 1,4 });
+		//{"removed indices":[[1]],"added":[{"index":[1],"value":4}]}
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 1 })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 4 }
+				  })
+			  })
+			}
+		};
 		CheckCompare(A, B, expected);
 	}
 	TEST_METHOD(TupleOfTuples_Unchanged) {
@@ -1662,8 +1678,45 @@ public:
 	}
 	TEST_METHOD(TupleOfTuples_Changed) {
 		std::tuple<std::tuple<int, int>, std::tuple<int, int>> A{ {1,2}, {3,4} };
-		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {5,6}, {7,8} };
-		svh::json expected = svh::json({ { 5,6 }, { 7,8 } });
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {1,6}, {3,4} };
+		//{"removed indices":[[0,1]],"added":[{"index":[0,1],"value":6}]}
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ { 0,1 } })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, { 0,1 } },
+					  { svh::VALUE, 6 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+
+	TEST_METHOD(TupleOfTuples_Changed_Multiple) {
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> A{ {1,2}, {3,4} };
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {1,6}, {3,8} };
+		//{"removed indices":[[0],[1]],"added":[{"index":[0],"value":[1,6]},{"index":[1],"value":[3,8]}]}
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ { 0,1 },{ 1,1 } })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, { 0,1 } },
+					  { svh::VALUE, 6 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, { 1,1 } },
+					  { svh::VALUE, 8 }
+				  })
+			  })
+			}
+		};
 		CheckCompare(A, B, expected);
 	}
 

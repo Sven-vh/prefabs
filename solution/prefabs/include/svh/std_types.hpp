@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 #include "svh/serializer.hpp"
 #include "svh/defines.hpp"
 
@@ -83,13 +83,13 @@ namespace std {
 		for (auto&& [k, v] : mm) {
 			auto& slot = result[k];
 			if (slot.is_null()) {
-				// first value for this key ñ store it directly
+				// first value for this key ‚Äì store it directly
 				slot = svh::Serializer::ToJson(v);
 			} else if (slot.is_array()) {
 				// already collecting duplicates
 				slot.push_back(svh::Serializer::ToJson(v));
 			} else {
-				// second value ñ convert the existing scalar into an array
+				// second value ‚Äì convert the existing scalar into an array
 				svh::json tmp = std::move(slot);
 				slot = svh::json::array();
 				slot.push_back(std::move(tmp));
@@ -112,13 +112,13 @@ namespace std {
 		for (auto&& [k, v] : umm) {
 			auto& slot = result[k];
 			if (slot.is_null()) {
-				// first value for this key ñ store it directly
+				// first value for this key ‚Äì store it directly
 				slot = svh::Serializer::ToJson(v);
 			} else if (slot.is_array()) {
 				// already collecting duplicates
 				slot.push_back(svh::Serializer::ToJson(v));
 			} else {
-				// second value ñ convert the existing scalar into an array
+				// second value ‚Äì convert the existing scalar into an array
 				svh::json tmp = std::move(slot);
 				slot = svh::json::array();
 				slot.push_back(std::move(tmp));
@@ -535,7 +535,7 @@ namespace std {
 			return;
 		}
 
-		// Try to lock the weak_ptr to get the callerís shared_ptr
+		// Try to lock the weak_ptr to get the caller‚Äôs shared_ptr
 		if (auto sp_existing = ptr.lock()) {
 			svh::Deserializer::FromJson(j, *sp_existing);
 		} else {
@@ -591,12 +591,12 @@ namespace std {
 	template<typename Sequence>
 	static inline auto CompareImpl(const Sequence& left, const Sequence& right)
 		-> std::enable_if_t<svh::is_sequence_v<Sequence> && !svh::is_std_vector_v<Sequence>, svh::json> {
-		// Turn left+right into nested std::vector<Ö> at all depths:
+		// Turn left+right into nested std::vector<‚Ä¶> at all depths:
 		auto l2 = svh::to_std_vector(left);
 		auto r2 = svh::to_std_vector(right);
 
-		// Now l2/r2 have type std::vector<Övector<Övector<Atomic>Ö>>
-		// and we dispatch into your real CompareImpl(std::vector<Elem>,Ö).
+		// Now l2/r2 have type std::vector<‚Ä¶vector<‚Ä¶vector<Atomic>‚Ä¶>>
+		// and we dispatch into your real CompareImpl(std::vector<Elem>,‚Ä¶).
 		return svh::Compare::GetChanges(l2, r2);
 	}
 
@@ -621,6 +621,15 @@ namespace std {
 		return svh::Compare::GetChanges(l2, r2);
 	}
 
+	/* For tuples */
+	template<typename... Args>
+	static inline svh::json CompareImpl(const std::tuple<Args...>& left, const std::tuple<Args...>& right) {
+		//convert tuple to std::vector
+		auto l1 = svh::to_std_vector(left);
+		auto r1 = svh::to_std_vector(right);
+		return svh::Compare::GetChanges(l1, r1);
+	}
+
 	template<typename T>
 	struct CustomCompare {
 		bool impl(const T& a, const T& b) const {
@@ -634,7 +643,7 @@ namespace std {
 		const std::vector<Elem>& left,
 		const std::vector<Elem>& right
 	) {
-		// ó this is your ìrealî implementation, unchanged ó
+		// ‚Äî this is your ‚Äúreal‚Äù implementation, unchanged ‚Äî
 		dtl::Diff<Elem, std::vector<Elem>, CustomCompare<Elem>> d(left, right, false, CustomCompare<Elem>{});
 		d.compose();
 		auto ses = d.getSes();
@@ -667,69 +676,83 @@ namespace std {
 		svh::json removed_json = svh::json::array();
 		svh::json added_json = svh::json::array();
 
+#include <algorithm>  // for std::find_if
+
 		for (size_t k = 0; k < ops.size(); ++k) {
 			auto& o = ops[k];
-			if constexpr (svh::has_begin_end_v<Elem> && !svh::is_string_type_v<Elem>) {
-				if (o.type == dtl::SES_DELETE
-					&& k + 1 < ops.size()
-					&& ops[k + 1].type == dtl::SES_ADD
-					&& ops[k + 1].afterIdx == o.beforeIdx) {
-					// recurse into the two inner sequences
-					Elem oldInner = left[o.beforeIdx];
-					Elem newInner = right[o.beforeIdx];
-					svh::json innerDiff = svh::Compare::GetChanges(oldInner, newInner);
 
-					if (!innerDiff.empty()) {
-						// flatten removed indices
+			// ‚Äî only recurse for sequence‚Äêlike Elems (e.g. vector<...>, list<...>, but not int) ‚Äî
+			if constexpr (svh::has_begin_end_v<Elem> && !svh::is_string_type_v<Elem>) {
+				if (o.type == dtl::SES_DELETE) {
+					// find the matching ADD for this delete, anywhere after it
+					auto it = std::find_if(
+						ops.begin() + k + 1, ops.end(),
+						[&](Op const& x) {
+							return x.type == dtl::SES_ADD
+								&& x.afterIdx == o.beforeIdx;
+						}
+					);
+
+					if (it != ops.end()) {
+						// recurse into the two inner sequences
+						Elem oldInner = left[o.beforeIdx];
+						Elem newInner = right[o.beforeIdx];
+						svh::json innerDiff = svh::Compare::GetChanges(oldInner, newInner);
+
+						// flatten any removed indices
 						if (innerDiff.contains(svh::REMOVED_INDICES)) {
-							for (auto& innerIdxJSON : innerDiff[svh::REMOVED_INDICES]) {
+							for (auto& innerIdx : innerDiff[svh::REMOVED_INDICES]) {
 								svh::json path = svh::json::array();
 								path.push_back(o.beforeIdx);
-								if (innerIdxJSON.is_array()) {
-									// splice all inner elements
-									for (auto& e : innerIdxJSON)
+								if (innerIdx.is_array()) {
+									for (auto& e : innerIdx)
 										path.push_back(e);
 								} else {
-									// single integer
-									path.push_back(innerIdxJSON);
+									path.push_back(innerIdx);
 								}
 								removed_json.push_back(std::move(path));
 							}
 						}
-						// flatten added values
+
+						// flatten any added values
 						if (innerDiff.contains(svh::ADDED_VALUES)) {
 							for (auto& item : innerDiff[svh::ADDED_VALUES]) {
-								auto idxJSON = item[svh::INDEX];
+								svh::json idx = item[svh::INDEX];
 								svh::json path = svh::json::array();
 								path.push_back(o.beforeIdx);
-								if (idxJSON.is_array()) {
-									for (auto& e : idxJSON)
+								if (idx.is_array()) {
+									for (auto& e : idx)
 										path.push_back(e);
 								} else {
-									path.push_back(idxJSON);
+									path.push_back(idx);
 								}
-								svh::json entry = {
+								svh::json entry = svh::json::object({
 									{ svh::INDEX, std::move(path) },
 									{ svh::VALUE, item[svh::VALUE] }
-								};
+									});
 								added_json.push_back(std::move(entry));
 							}
 						}
-					}
 
-					++k;  // skip that ADD
-					continue;
+						// mark that ADD as ‚Äúused‚Äù so we don‚Äôt emit it again
+						it->type = dtl::SES_COMMON;
+						continue;
+					}
 				}
 			}
 
-			// the atomic delete/add cases:
+			// ‚Äî fallback: atomic delete or add (always wrap the index as [n]) ‚Äî
 			if (o.type == dtl::SES_DELETE) {
-				removed_json.push_back(o.beforeIdx);
+				removed_json.push_back(
+					svh::json::array({ o.beforeIdx })
+				);
 			} else if (o.type == dtl::SES_ADD) {
-				added_json.push_back(svh::json::object({
-				  { svh::INDEX, o.afterIdx },
-				  { svh::VALUE, svh::Serializer::ToJson(o.value) }
-					}));
+				added_json.push_back(
+					svh::json::object({
+						{ svh::INDEX, svh::json::array({ o.afterIdx }) },
+						{ svh::VALUE, svh::Serializer::ToJson(o.value) }
+						})
+				);
 			}
 		}
 
