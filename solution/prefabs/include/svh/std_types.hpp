@@ -600,27 +600,6 @@ namespace std {
 		return svh::Compare::GetChanges(l2, r2);
 	}
 
-	template<typename Ptr>
-	static inline auto CompareImpl(const std::vector<Ptr>& left, const std::vector<Ptr>& right)
-		-> svh::enable_if_pointer_like<Ptr, svh::json> {
-		// Extract the element type T from *Ptr
-		using Elem = std::decay_t<decltype(*std::declval<Ptr&>())>;
-
-		std::vector<Elem> l2, r2;
-		auto n = std::min(left.size(), right.size());
-		l2.reserve(n);
-		r2.reserve(n);
-
-		for (size_t i = 0; i < n; ++i) {
-			if (left[i] && right[i]) {
-				l2.push_back(*left[i]);
-				r2.push_back(*right[i]);
-			}
-		}
-
-		return svh::Compare::GetChanges(l2, r2);
-	}
-
 	/* For tuples */
 	template<typename... Args>
 	static inline svh::json CompareImpl(const std::tuple<Args...>& left, const std::tuple<Args...>& right) {

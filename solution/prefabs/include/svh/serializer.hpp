@@ -235,7 +235,7 @@ namespace svh {
 		/* For anything else */
 		template<typename T>
 		static auto GetChangesImpl(const T& left, const T& right)
-			-> std::enable_if_t< !is_visitable_v<T> && !has_compare_v<T>, json> {
+			-> std::enable_if_t< !is_visitable_v<T> && !has_compare_v<T> && !is_std_vector_v<T>, json> {
 			if (left != right) {
 				return Serializer::ToJson(right);
 			}

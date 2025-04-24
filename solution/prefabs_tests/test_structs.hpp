@@ -161,7 +161,7 @@ struct PlayerEntity {
 	std::string id;
 	std::shared_ptr<Transform> transform;
 	Inventory inventory;
-	std::vector<std::unique_ptr<Weapon>> weapons;
+	std::vector<std::shared_ptr<Weapon>> weapons;
 	std::map<std::string, std::shared_ptr<Armor>> armors;
 	std::optional<SkillTree> skill_tree;
 };

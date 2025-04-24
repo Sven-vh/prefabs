@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <svh/visit_struct/visit_struct.hpp>
 #include <type_traits>
 
@@ -153,22 +153,18 @@ namespace svh {
 	constexpr bool is_std_pair_v = is_specialization<T, std::pair>::value;
 
 	/* Is pointer like */
-	template<typename, typename = void>
+	template<typename P>
 	struct is_pointer_like : std::false_type {};
 
-	// unique_ptr
+	/* specializations for pointer-like classes */
 	template<typename T, typename D>
 	struct is_pointer_like<std::unique_ptr<T, D>> : std::true_type {};
 
-	// shared_ptr
 	template<typename T>
 	struct is_pointer_like<std::shared_ptr<T>> : std::true_type {};
 
 	template<typename P>
-	struct is_pointer_like_impl : is_pointer_like<std::remove_cv_t<P>> {};
-
-	template<typename P>
-	constexpr bool is_pointer_like_v = is_pointer_like_impl<P>::value;
+	constexpr bool is_pointer_like_v = is_pointer_like<std::remove_cv_t<std::remove_reference_t<P>>>::value;
 
 	template<typename T, typename R = void>
 	using enable_if_pointer_like = std::enable_if_t<is_pointer_like_v<T>, R>;
@@ -262,15 +258,13 @@ namespace svh {
 	template<typename U, typename A>
 	struct is_std_vector<std::vector<U, A>> : std::true_type {};
 	template<typename T>
-	inline constexpr bool is_std_vector_v = is_std_vector<
-		std::remove_cv_t<std::remove_reference_t<T>>
-	>::value;
+	inline constexpr bool is_std_vector_v = is_std_vector<std::remove_cv_t<std::remove_reference_t<T>>>::value;
 
 	/* convert to vector */
 	template<typename T>
 	auto to_std_vector(const T& x)
 		-> std::enable_if_t<!svh::is_sequence_v<T> && !svh::is_std_tuple_v<T>, T> {
-		// atomic � not a container, just return as-is
+		// atomic – not a container, just return as-is
 		return x;
 	}
 
