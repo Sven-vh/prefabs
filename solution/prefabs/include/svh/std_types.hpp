@@ -622,17 +622,16 @@ namespace std {
 		const std::vector<Elem>& left,
 		const std::vector<Elem>& right
 	) {
-		// — this is your “real” implementation, unchanged —
+		// Use the custom comparator to compare elements
 		dtl::Diff<Elem, std::vector<Elem>, CustomCompare<Elem>> d(left, right, false, CustomCompare<Elem>{});
 		d.compose();
 		auto ses = d.getSes();
 		if (!ses.isChange()) return {};
 
 		struct Op {
-			int          type;
-			long long    beforeIdx, afterIdx;
-			Elem         value;
-
+			int type;
+			long long beforeIdx, afterIdx;
+			Elem value;
 
 			Op(int t, long long b, long long a, Elem v)
 				: type(t),
@@ -641,9 +640,9 @@ namespace std {
 				value(std::move(v)) {
 			}
 		};
+
 		std::vector<Op> ops;
 		for (auto const& kv : ses.getSequence()) {
-			// std::move(kv.first) turns that potentially const lvalue into an rvalue
 			ops.emplace_back(
 				kv.second.type,
 				kv.second.beforeIdx - 1,
@@ -654,8 +653,6 @@ namespace std {
 
 		svh::json removed_json = svh::json::array();
 		svh::json added_json = svh::json::array();
-
-#include <algorithm>  // for std::find_if
 
 		for (size_t k = 0; k < ops.size(); ++k) {
 			auto& o = ops[k];

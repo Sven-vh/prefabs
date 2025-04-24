@@ -1721,9 +1721,9 @@ public:
 	}
 	TEST_METHOD(PairOfPairs_Changed) {
 		std::pair<std::pair<int, int>, std::pair<int, int>> A{ {1,2}, {3,4} };
-		std::pair<std::pair<int, int>, std::pair<int, int>> B{ {5,6}, {7,8} };
+		std::pair<std::pair<int, int>, std::pair<int, int>> B{ {5,2}, {7,8} };
 		//{"first":{"first":5,"second":6},"second":{"first":7,"second":8}}
-		svh::json expected = svh::json({ { svh::FIRST, { { svh::FIRST, 5 }, { svh::SECOND, 6 } } }, { svh::SECOND, { { svh::FIRST, 7 }, { svh::SECOND, 8 } } } });
+		svh::json expected = svh::json({ { svh::FIRST, { { svh::FIRST, 5 } } }, { svh::SECOND, { { svh::FIRST, 7 }, { svh::SECOND, 8 } } } });
 		CheckCompare(A, B, expected);
 	}
 
