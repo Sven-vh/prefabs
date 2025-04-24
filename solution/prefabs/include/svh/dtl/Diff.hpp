@@ -585,11 +585,8 @@ namespace dtl {
         
         template<typename Seq>
         Seq slice_from(Seq const& src, size_t start) {
-            Seq out{};                                  // default-constructed std::array
-            auto   it = src.begin() + start;
-            for (size_t i = 0; it != src.end(); ++i, ++it)
-                out[i] = *it;
-            return out;
+            auto first = std::next(src.begin(), start);
+            return Seq{ first, src.end() };
         }
 
 

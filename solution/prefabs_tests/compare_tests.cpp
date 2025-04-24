@@ -1137,221 +1137,653 @@ public:
 	//		std::forward_list<int> fl{ 1,2,3 };
 	//		CheckSerialization(fl, svh::json::array({ 1,2,3 }));
 	//	}
-	//	TEST_METHOD(EmptyForwardList) {
-	//		std::forward_list<std::string> fl;
-	//		CheckSerialization(fl, svh::json::array({}));
-	//	}
-	//	TEST_METHOD(ForwardListOfLists) {
-	//		std::forward_list<std::forward_list<int>> fll{ {1,2}, {3,4} };
-	//		CheckSerialization(fll, svh::json::array({ {1,2}, {3,4} }));
-	//	}
-	//
-	//	/* Map */
-	//	TEST_METHOD(Map) {
-	//		std::map<std::string, int> m{ {"one",1},{"two",2} };
-	//		CheckSerialization(m, svh::json::object({ {"one",1},{"two",2} }));
-	//	}
-	//	TEST_METHOD(FloatMap) {
-	//		std::map<float, int> m{ {1.0f,1},{2.0f,2} };
-	//		//auto json_object = svh::json::object({ {1.0f,1},{2.0f,2} }); // isn't valid JSON
-	//		//CheckSerialization(m, json_object);
-	//		auto result = svh::Serializer::ToJson(m);
-	//		Logger::WriteMessage(result.dump().c_str());
-	//	}
-	//	TEST_METHOD(EmptyMap) {
-	//		std::map<std::string, int> m;
-	//		CheckSerialization(m, svh::json::object({}));
-	//	}
-	//
-	//	TEST_METHOD(MapOfMaps) {
-	//		std::map<std::string, std::map<std::string, int>> mm{
-	//			{"first", {{"a",1},{"b",2}}},
-	//			{"second",{{"c",3},{"d",4}}}
-	//		};
-	//		CheckSerialization(mm,
-	//			svh::json::object({
-	//				{"first",  svh::json::object({{"a",1},{"b",2}})},
-	//				{"second", svh::json::object({{"c",3},{"d",4}})}
-	//				})
-	//		);
-	//	}
-	//
-	//	/* Unordered map*/
-	//	TEST_METHOD(UnorderedMap_SingleElement) {
-	//		std::unordered_map<std::string, int> um{ {"solo",42} };
-	//		CheckSerialization(um, svh::json::object({ {"solo",42} }));
-	//	}
-	//	TEST_METHOD(EmptyUnorderedMap) {
-	//		std::unordered_map<std::string, int> um;
-	//		CheckSerialization(um, svh::json::object({}));
-	//	}
-	//	TEST_METHOD(UnorderedMapOfMaps) {
-	//		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm{
-	//			{"first", {{"a",1},{"b",2}}},
-	//			{"second",{{"c",3},{"d",4}}}
-	//		};
-	//		CheckSerialization(umm,
-	//			svh::json::object({
-	//				{"first",  svh::json::object({{"a",1},{"b",2}})},
-	//				{"second", svh::json::object({{"c",3},{"d",4}})}
-	//				})
-	//		);
-	//	}
-	//
-	//	/* Multimap */
-	//	TEST_METHOD(Multimap) {
-	//		std::multimap<std::string, int> mm{ {"one",1},{"one",2} };
-	//		CheckSerialization(mm, svh::json::object({ {"one",svh::json::array({1,2})} }));
-	//	}
-	//	TEST_METHOD(EmptyMultimap) {
-	//		std::multimap<std::string, int> mm;
-	//		CheckSerialization(mm, svh::json::object({}));
-	//	}
-	//	TEST_METHOD(MultimapOfMaps) {
-	//		std::multimap<std::string, std::multimap<std::string, int>> mmm{
-	//			{"first", {{"a",1},{"b",2}}},
-	//			{"second",{{"c",3},{"d",4}}}
-	//		};
-	//		CheckSerialization(mmm,
-	//			svh::json::object({
-	//				{"first",  svh::json::object({{"a",1},{"b",2}})},
-	//				{"second", svh::json::object({{"c",3},{"d",4}})}
-	//				})
-	//		);
-	//	}
-	//
-	//	/* Unordered multimap */
-	//	TEST_METHOD(UnorderedMultimap) {
-	//		std::unordered_multimap<std::string, int> umm{ {"one",1},{"one",2} };
-	//		CheckSerialization(umm, svh::json::object({ {"one",svh::json::array({1,2})} }));
-	//	}
-	//	TEST_METHOD(EmptyUnorderedMultimap) {
-	//		std::unordered_multimap<std::string, int> umm;
-	//		CheckSerialization(umm, svh::json::object({}));
-	//	}
-	//	TEST_METHOD(UnorderedMultimapOfMaps) {
-	//		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm{
-	//			{"first", {{"a",1},{"b",2}}},
-	//			{"second",{{"c",3},{"d",4}}}
-	//		};
-	//		CheckSerialization(ummm,
-	//			svh::json::object({
-	//				{"first",  svh::json::object({{"a",1},{"b",2}})},
-	//				{"second", svh::json::object({{"c",3},{"d",4}})}
-	//				})
-	//		);
-	//	}
+	TEST_METHOD(ForwardsList_Unchanged) {
+		std::forward_list<int> A{ 1,2,3 };
+		std::forward_list<int> B{ 1,2,3 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(ForwardsList_Changed) {
+		std::forward_list<int> A{ 1,2,3 };
+		std::forward_list<int> B{ 4,5,6 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1,2
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, 4 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, 5 }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, 6 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(ForwardsList_Added) {
+		std::forward_list<int> A{ 1,2,3 };
+		std::forward_list<int> B{ 1,2,3,4 };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 3 },
+					  { svh::VALUE, 4 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(ForwardsList_Removed) {
+		std::forward_list<int> A{ 1,2,3 };
+		std::forward_list<int> B{ 1,2 };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 2 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(ForwardsListOfLists_Unchanged) {
+		std::forward_list<std::forward_list<int>> A{ {1,2}, {3,4} };
+		std::forward_list<std::forward_list<int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(ForwardsListOfLists_Changed) {
+		std::forward_list<std::forward_list<int>> A{ {1,2}, {3,4} };
+		std::forward_list<std::forward_list<int>> B{ {5,6}, {7,8} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, svh::json::array({5,6}) }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, svh::json::array({7,8}) }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+
+	/* Map */
+	/* WARNING, maps are ordered based on the key, not the order in which you put them */
+	TEST_METHOD(Map_Unchanged) {
+		std::map<std::string, int> A{ {"one",1},{"two",2} };
+		std::map<std::string, int> B{ {"one",1},{"two",2} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Map_Changed) {
+		std::map<std::string, int> A{ {"one",1},{"two",2} };
+		std::map<std::string, int> B{ {"three",3},{"four",4} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"four",4} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"three",3} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(Map_Added) {
+		std::map<std::string, int> A{ {"one",1},{"two",2} };
+		std::map<std::string, int> B{ {"one",1},{"two",2},{"three",3} };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 1 }, // index 1 since th becomes before tw. 
+					  { svh::VALUE, {"three",3} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+
+	TEST_METHOD(Map_Removed) {
+		std::map<std::string, int> A{ {"one",1},{"two",2} };
+		std::map<std::string, int> B{ {"one",1} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 1 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(MapOfMaps_Unchanged) {
+		std::map<std::string, std::map<std::string, int>> mm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::map<std::string, std::map<std::string, int>> mm2{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		CheckCompare(mm, mm2, svh::json());
+	}
+	TEST_METHOD(MapOfMaps_Changed) {
+		std::map<std::string, std::map<std::string, int>> mm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::map<std::string, std::map<std::string, int>> mm2{
+			{"first", {{"a",5},{"b",6}}},
+			{"second",{{"c",7},{"d",8}}}
+		};
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"first",svh::json::object({{"a",5},{"b",6}})} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"second",svh::json::object({{"c",7},{"d",8}})} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(mm, mm2, expected);
+	}
+
+	/* Unordered map*/
+	TEST_METHOD(UnorderedMap_Unchanged) {
+		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_map<std::string, int> B{ {"a",1},{"b",2} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(UnorderedMap_Changed) {
+		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_map<std::string, int> B{ {"c",3},{"d",4} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"c",3} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"d",4} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UnorderedMap_Added) {
+		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_map<std::string, int> B{ {"a",1},{"b",2},{"c",3} };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, {"c",3} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UnorderedMap_Removed) {
+		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_map<std::string, int> B{ {"a",1} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 1 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UnorderedMapOfMaps_Unchanged) {
+		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm2{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		CheckCompare(umm, umm2, svh::json());
+	}
+	TEST_METHOD(UnorderedMapOfMaps_Changed) {
+		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm2{
+			{"first", {{"a",5},{"b",6}}},
+			{"second",{{"c",7},{"d",8}}}
+		};
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"first",svh::json::object({{"a",5},{"b",6}})} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"second",svh::json::object({{"c",7},{"d",8}})} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(umm, umm2, expected);
+	}
+
+	/* Multimap */
+	TEST_METHOD(Multimap_Unchanged) {
+		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::multimap<std::string, int> B{ {"a",1},{"b",2} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Multimap_Changed) {
+		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::multimap<std::string, int> B{ {"c",3},{"d",4} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"c",3} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"d",4} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(Multimap_Added) {
+		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::multimap<std::string, int> B{ {"a",1},{"b",2},{"c",3} };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, {"c",3} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(Multimap_Removed) {
+		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::multimap<std::string, int> B{ {"a",1} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 1 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(MultimapOfMaps_Unchanged) {
+		std::multimap<std::string, std::multimap<std::string, int>> mmm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::multimap<std::string, std::multimap<std::string, int>> mmm2{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		CheckCompare(mmm, mmm2, svh::json());
+	}
+	TEST_METHOD(MultimapOfMaps_Changed) {
+		std::multimap<std::string, std::multimap<std::string, int>> mmm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::multimap<std::string, std::multimap<std::string, int>> mmm2{
+			{"first", {{"a",5},{"b",6}}},
+			{"second",{{"c",7},{"d",8}}}
+		};
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"first",svh::json::object({{"a",5},{"b",6}})} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"second",svh::json::object({{"c",7},{"d",8}})} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(mmm, mmm2, expected);
+	}
+
+	/* Unordered multimap */
+	TEST_METHOD(UnorderedMultimap_Unchanged) {
+		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_multimap<std::string, int> B{ {"a",1},{"b",2} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(UnorderedMultimap_Changed) {
+		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_multimap<std::string, int> B{ {"c",3},{"d",4} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"c",3} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"d",4} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UnorderedMultimap_Added) {
+		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_multimap<std::string, int> B{ {"a",1},{"b",2},{"c",3} };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 2 },
+					  { svh::VALUE, {"c",3} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UnorderedMultimap_Removed) {
+		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
+		std::unordered_multimap<std::string, int> B{ {"a",1} };
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({ 1 })
+			}
+		};
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UnorderedMultimapOfMaps_Unchanged) {
+		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm2{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		CheckCompare(ummm, ummm2, svh::json());
+	}
+	TEST_METHOD(UnorderedMultimapOfMaps_Changed) {
+		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm{
+			{"first", {{"a",1},{"b",2}}},
+			{"second",{{"c",3},{"d",4}}}
+		};
+		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm2{
+			{"first", {{"a",5},{"b",6}}},
+			{"second",{{"c",7},{"d",8}}}
+		};
+		svh::json expected = {
+			{ svh::REMOVED_INDICES,
+			  svh::json::array({
+				  0,1
+			  })
+			},
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, 0 },
+					  { svh::VALUE, {"first",svh::json::object({{"a",5},{"b",6}})} }
+				  }),
+				  svh::json({
+					  { svh::INDEX, 1 },
+					  { svh::VALUE, {"second",svh::json::object({{"c",7},{"d",8}})} }
+				  })
+			  })
+			}
+		};
+		CheckCompare(ummm, ummm2, expected);
+	}
+	};
+
+	/* Test pair and tuple types */
+	TEST_CLASS(PairTupleTypes) {
+public:
+	/* Pairs */
+	TEST_METHOD(Pair_Unchanged) {
+		std::pair<int, int> A{ 1,2 };
+		std::pair<int, int> B{ 1,2 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Pair_Changed) {
+		std::pair<int, int> A{ 1,2 };
+		std::pair<int, int> B{ 1,4 };
+		svh::json expected = svh::json({ 1,4 });
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(PairOfPairs_Unchanged) {
+		std::pair<std::pair<int, int>, std::pair<int, int>> A{ {1,2}, {3,4} };
+		std::pair<std::pair<int, int>, std::pair<int, int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(PairOfPairs_Changed) {
+		std::pair<std::pair<int, int>, std::pair<int, int>> A{ {1,2}, {3,4} };
+		std::pair<std::pair<int, int>, std::pair<int, int>> B{ {5,6}, {7,8} };
+		svh::json expected = svh::json({ { 5,6 }, { 7,8 } });
+		CheckCompare(A, B, expected);
+	}
+
+	/* Tuple */
+	TEST_METHOD(Tuple_Unchanged) {
+		std::tuple<int, int> A{ 1,2 };
+		std::tuple<int, int> B{ 1,2 };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(Tuple_Changed) {
+		std::tuple<int, int> A{ 1,2 };
+		std::tuple<int, int> B{ 1,4 };
+		svh::json expected = svh::json({ 1,4 });
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(TupleOfTuples_Unchanged) {
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> A{ {1,2}, {3,4} };
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {1,2}, {3,4} };
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(TupleOfTuples_Changed) {
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> A{ {1,2}, {3,4} };
+		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {5,6}, {7,8} };
+		svh::json expected = svh::json({ { 5,6 }, { 7,8 } });
+		CheckCompare(A, B, expected);
+	}
+
+	};
+
+	/* Optional and variant */
+	TEST_CLASS(OptionalVariantTypes) {
+		//public:
+		TEST_METHOD(Optional_Unchanged) {
+			std::optional<int> opt = 99;
+			std::optional<int> opt2 = 99;
+			CheckCompare(opt, opt2, svh::json());
+		}
+		TEST_METHOD(Optional_Changed) {
+			std::optional<int> opt = 99;
+			std::optional<int> opt2 = 100;
+			svh::json expected = svh::json(100);
+			CheckCompare(opt, opt2, expected);
+		}
+		TEST_METHOD(OptionalOfOptional_Unchanged) {
+			std::optional<std::optional<int>> opt = 99;
+			std::optional<std::optional<int>> opt2 = 99;
+			CheckCompare(opt, opt2, svh::json());
+		}
+		TEST_METHOD(OptionalOfOptional_Changed) {
+			std::optional<std::optional<int>> opt = 99;
+			std::optional<std::optional<int>> opt2 = 100;
+			svh::json expected = svh::json(100);
+			CheckCompare(opt, opt2, expected);
+		}
+	};
+
+	/* Test raw pointers */
+	TEST_CLASS(RawPointerTypes) {
+public:
+	TEST_METHOD(RawPointer_UnChanged) {
+		int* A = new int(42);
+		int* B = new int(42);
+		CheckCompare(*A, *B, svh::json());
+		delete A;
+		delete B;
+	}
+	TEST_METHOD(RawPointer_Changed) {
+		int* A = new int(42);
+		int* B = new int(43);
+		svh::json expected = svh::json(43);
+		CheckCompare(*A, *B, expected);
+		delete A;
+		delete B;
+	}
 	};
 	//
-	//	/* Test pair and tuple types */
-	//	TEST_CLASS(PairTupleTypes) {
-	//public:
-	//	TEST_METHOD(Pair) {
-	//		std::pair<int, std::string> p{ 7, "seven" };
-	//		CheckSerialization(p, svh::json::array({ 7,"seven" }));
-	//	}
-	//
-	//	TEST_METHOD(Tuple) {
-	//		std::tuple<int, float, bool> t{ 8, 2.5f, false };
-	//		CheckSerialization(t, svh::json::array({ 8,2.5f,false }));
-	//	}
-	//	TEST_METHOD(EmptyTuple) {
-	//		std::tuple<> t;
-	//		CheckSerialization(t, svh::json::array({}));
-	//	}
-	//
-	//	};
-	//
-	//	/* Optional and variant */
-	//	TEST_CLASS(OptionalVariantTypes) {
-	//public:
-	//	/* With int*/
-	//	TEST_METHOD(Optional) {
-	//		std::optional<int> opt = 99;
-	//		CheckSerialization(opt, svh::json(99));
-	//	}
-	//	TEST_METHOD(Optional_Null) {
-	//		std::optional<int> opt;
-	//		CheckSerialization(opt, svh::json(nullptr));
-	//	}
-	//
-	//	/* With string */
-	//	TEST_METHOD(Variant) {
-	//		std::variant<int, std::string> v = 100;
-	//		CheckSerialization(v, svh::json(100));
-	//	}
-	//	TEST_METHOD(VariantString) {
-	//		std::variant<int, std::string> v = "hello";
-	//		CheckSerialization(v, svh::json("hello"));
-	//	}
-	//
-	//	/* With struct */
-	//	TEST_METHOD(VariantWithStruct) {
-	//		std::variant<int, Transform> v = Transform{ {1.0f,2.0f,3.0f}, {1.0f,0.0f,0.0f,0.0f}, {1.0f,1.0f,1.0f} };
-	//		CheckSerialization(v,
-	//			svh::json::object({
-	//				{"position", svh::json::array({ 1.0f,2.0f,3.0f })},
-	//				{"rotation", svh::json::array({ 0.0f,0.0f,0.0f,1.0f })},
-	//				{"scale",    svh::json::array({ 1.0f,1.0f,1.0f })},
-	//				})
-	//				);
-	//	}
-	//	};
-	//
-	//	/* Test raw pointers */ /* Currently doesn't support raw pointers */
-	//	//TEST_CLASS(RawPointerTypes) {
-	//	//	TEST_METHOD(RawPointer_NonNull) {
-	//	//		int x = 5;
-	//	//		int* p = &x;
-	//	//		CheckSerialization(p, svh::json(5));
-	//	//	}
-	//	//	TEST_METHOD(RawPointer_Null) {
-	//	//		int* p = nullptr;
-	//	//		CheckSerialization(p, svh::json(nullptr));
-	//	//	}
-	//	//};
-	//
-	//	/* Test smart pointers */
-	//	TEST_CLASS(PointerTypes) {
-	//public:
-	//	/* Unique pointers */
-	//	TEST_METHOD(UniquePointer_NonNull) {
-	//		auto up = std::make_unique<int>(99);
-	//		CheckSerialization(up, svh::json(99));
-	//	}
-	//
-	//	TEST_METHOD(UniquePointer_Null) {
-	//		std::unique_ptr<int> up;
-	//		CheckSerialization(up, svh::json(nullptr));
-	//	}
-	//
-	//	/* Shared pointers */
-	//	TEST_METHOD(SharedPointer_NonNull) {
-	//		auto sp = std::make_shared<int>(123);
-	//		CheckSerialization(sp, svh::json(123));
-	//	}
-	//
-	//	TEST_METHOD(SharedPointer_Null) {
-	//		std::shared_ptr<int> sp;
-	//		CheckSerialization(sp, svh::json(nullptr));
-	//	}
-	//
-	//	TEST_METHOD(SharedPointerOfVector) {
-	//		auto spv = std::make_shared<std::vector<int>>(std::vector<int>{4, 5, 6});
-	//		CheckSerialization(spv, svh::json::array({ 4,5,6 }));
-	//	}
-	//
-	//	/* Weak pointers */
-	//	TEST_METHOD(WeakPointer_Locked) {
-	//		auto sp = std::make_shared<int>(42);
-	//		std::weak_ptr<int> wp = sp;
-	//		CheckSerialization(wp, svh::json(42));
-	//	}
-	//	TEST_METHOD(WeakPointer_Expired) {
-	//		std::weak_ptr<int> wp;
-	//		CheckSerialization(wp, svh::json(nullptr));
-	//	}
-	//	};
+		/* Test smart pointers */
+	TEST_CLASS(PointerTypes) {
+public:
+	/* Unique pointers */
+	TEST_METHOD(UniquePointer_Unchanged) {
+		std::unique_ptr<int> A = std::make_unique<int>(42);
+		std::unique_ptr<int> B = std::make_unique<int>(42);
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(UniquePointer_Changed) {
+		std::unique_ptr<int> A = std::make_unique<int>(42);
+		std::unique_ptr<int> B = std::make_unique<int>(43);
+		svh::json expected = svh::json(43);
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(UniquePointerOfUniquePointer_Unchanged) {
+		std::unique_ptr<std::unique_ptr<int>> A = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
+		std::unique_ptr<std::unique_ptr<int>> B = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(UniquePointerOfUniquePointer_Changed) {
+		std::unique_ptr<std::unique_ptr<int>> A = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
+		std::unique_ptr<std::unique_ptr<int>> B = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(43));
+		svh::json expected = svh::json(43);
+		CheckCompare(A, B, expected);
+	}
+
+	/* Shared pointers */
+	TEST_METHOD(SharedPointer_Unchanged) {
+		std::shared_ptr<int> A = std::make_shared<int>(42);
+		std::shared_ptr<int> B = std::make_shared<int>(42);
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(SharedPointer_Changed) {
+		std::shared_ptr<int> A = std::make_shared<int>(42);
+		std::shared_ptr<int> B = std::make_shared<int>(43);
+		svh::json expected = svh::json(43);
+		CheckCompare(A, B, expected);
+	}
+	TEST_METHOD(SharedPointerOfSharedPointer_Unchanged) {
+		std::shared_ptr<std::shared_ptr<int>> A = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(42));
+		std::shared_ptr<std::shared_ptr<int>> B = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(42));
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(SharedPointerOfSharedPointer_Changed) {
+		std::shared_ptr<std::shared_ptr<int>> A = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(42));
+		std::shared_ptr<std::shared_ptr<int>> B = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(43));
+		svh::json expected = svh::json(43);
+		CheckCompare(A, B, expected);
+	}
+
+	/* Weak pointers */
+	TEST_METHOD(WeakPointer_Unchanged) {
+		std::shared_ptr<int> A_SP = std::make_shared<int>(42);
+		std::weak_ptr<int> A = A_SP;
+		std::shared_ptr<int> B_SP = std::make_shared<int>(42);
+		std::weak_ptr<int> B = B_SP;
+		CheckCompare(A, B, svh::json());
+	}
+	TEST_METHOD(WeakPointer_Changed) {
+		std::shared_ptr<int> A_SP = std::make_shared<int>(42);
+		std::weak_ptr<int> A = A_SP;
+		std::shared_ptr<int> B_SP = std::make_shared<int>(43);
+		std::weak_ptr<int> B = B_SP;
+		svh::json expected = svh::json(43);
+		CheckCompare(A, B, expected);
+	}
+	};
 	//
 		/* Test visitable structs */
 	TEST_CLASS(VisitableStructs) {
@@ -1383,15 +1815,6 @@ public:
 	}
 
 	TEST_METHOD(ItemHolderStruct_Changed) {
-		//ItemHolder ih;
-		//ih.item_count = 3;
-		//ih.items = { 1, 2, 3 };
-		//CheckSerialization(ih,
-		//	svh::json::object({
-		//		{"item_count", 3},
-		//		{"items", svh::json::array({1,2,3})}
-		//		})
-		//);
 		ItemHolder A;
 		A.item_count = 3;
 		A.items = { 1, 2, 3 };
@@ -1407,17 +1830,6 @@ public:
 	}
 
 	TEST_METHOD(GameEntityStruct_Unchanged) {
-		//GameEntity ge;
-		//ge.name = "entity";
-		//ge.transform = std::make_shared<Transform>();
-		//ge.item_holder = std::make_shared<ItemHolder>();
-		//CheckSerialization(ge,
-		//	svh::json::object({
-		//		{"name", "entity"},
-		//		{"transform", svh::Serializer::ToJson(ge.transform)},
-		//		{"item_holder", svh::Serializer::ToJson(ge.item_holder)}
-		//		})
-		//);
 		GameEntity A;
 		A.name = "entity";
 		A.transform = std::make_shared<Transform>();
@@ -1575,33 +1987,33 @@ public:
 		player.weapons.clear();
 		player.weapons.push_back(std::move(w1));
 		player.weapons.push_back(std::move(w2));
-		player.armors = { { "head", a1 }, { "body", a2 } };
+		player.armors = { { "body", a1 }, { "head", a2 } };
 		player.skill_tree = st;
 		return player;
 	}
 	/* Test complex nested structures */
-//	TEST_CLASS(ComplexNestedTest) {
-//public:
-//	TEST_METHOD(PlayerEntitySerialization_UnChanged) {
-//		auto A = CreateComplexNestedObject();
-//		auto B = CreateComplexNestedObject();
-//		CheckCompare(A, B, svh::json());
-//	}
-//
-//	TEST_METHOD(PlayerEntitySerialization_Changed) {
-//		auto A = CreateComplexNestedObject();
-//		auto B = CreateComplexNestedObject();
-//		B.weapons[0]->damage = 20;
-//		CheckCompare(A, B,
-//			svh::json::object({
-//				{"weapons", svh::json::array({
-//					svh::json::object({
-//						{"damage", 20}
-//						})
-//					})}
-//				})
-//		);
-//	}
-//	};
+	TEST_CLASS(ComplexNestedTest) {
+public:
+	TEST_METHOD(PlayerEntitySerialization_UnChanged) {
+		auto A = CreateComplexNestedObject();
+		auto B = CreateComplexNestedObject();
+		CheckCompare(A.armors, B.armors, svh::json());
+	}
+
+	TEST_METHOD(PlayerEntitySerialization_Changed) {
+		auto A = CreateComplexNestedObject();
+		auto B = CreateComplexNestedObject();
+		B.weapons[0]->damage = 20;
+		CheckCompare(A, B,
+			svh::json::object({
+				{"weapons", svh::json::array({
+					svh::json::object({
+						{"damage", 20}
+						})
+					})}
+				})
+		);
+	}
+	};
 
 } // namespace prefabstests

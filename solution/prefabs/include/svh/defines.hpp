@@ -148,6 +148,31 @@ namespace svh {
 	template<typename T>
 	constexpr bool is_string_type_v = is_string_v<T> || is_string_view_v<T>;
 
+	/* Is std::pair */
+	template<typename T>
+	constexpr bool is_std_pair_v = is_specialization<T, std::pair>::value;
+
+	/* Is pointer like */
+	template<typename, typename = void>
+	struct is_pointer_like : std::false_type {};
+
+	// unique_ptr
+	template<typename T, typename D>
+	struct is_pointer_like<std::unique_ptr<T, D>> : std::true_type {};
+
+	// shared_ptr
+	template<typename T>
+	struct is_pointer_like<std::shared_ptr<T>> : std::true_type {};
+
+	template<typename P>
+	struct is_pointer_like_impl : is_pointer_like<std::remove_cv_t<P>> {};
+
+	template<typename P>
+	constexpr bool is_pointer_like_v = is_pointer_like_impl<P>::value;
+
+	template<typename T, typename R = void>
+	using enable_if_pointer_like = std::enable_if_t<is_pointer_like_v<T>, R>;
+
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected
@@ -221,6 +246,8 @@ namespace svh {
 	constexpr char ADDED_VALUES[] = "added";
 	constexpr char INDEX[] = "index";
 	constexpr char VALUE[] = "value";
+	constexpr char FIRST[] = "first";
+	constexpr char SECOND[] = "second";
 
 	/* Is sequence type*/
 	template<typename T>

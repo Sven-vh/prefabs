@@ -244,3 +244,15 @@ namespace svh {
 
 	};
 }
+
+template<typename T>
+inline auto operator==(const T& lhs, const T& rhs)
+-> svh::enable_if_visitable<T, bool> {
+	return svh::Compare::GetChanges(lhs, rhs).empty();
+}
+
+template<typename T>
+inline auto operator!=(const T& lhs, const T& rhs)
+-> svh::enable_if_visitable<T, bool> {
+	return !svh::Compare::GetChanges(lhs, rhs).empty();
+}
