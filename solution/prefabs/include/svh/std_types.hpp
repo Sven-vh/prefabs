@@ -803,7 +803,7 @@ namespace std {
 		if (!removed_keys.empty()) result[svh::REMOVED] = std::move(removed_keys);
 		if (!changed.empty()) result[svh::CHANGED_VALUES] = std::move(changed);
 		if (!added_entries.empty()) result[svh::ADDED_VALUES] = std::move(added_entries);
-		return result;
+		return result.empty() ? nullptr : result;
 	}
 
 
