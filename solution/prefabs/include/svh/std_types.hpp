@@ -590,7 +590,7 @@ namespace std {
 
 	template<typename Sequence>
 	static inline auto CompareImpl(const Sequence& left, const Sequence& right)
-		-> std::enable_if_t<svh::is_sequence_v<Sequence> && !svh::is_std_vector_v<Sequence>, svh::json> {
+		-> std::enable_if_t<svh::is_sequence_v<Sequence> && !svh::is_std_vector_v<Sequence> && !svh::is_associative_map_v<Sequence>, svh::json> {
 		// Turn left+right into nested std::vector<…> at all depths:
 		auto l2 = svh::to_std_vector(left);
 		auto r2 = svh::to_std_vector(right);
@@ -653,12 +653,13 @@ namespace std {
 
 		svh::json removed_json = svh::json::array();
 		svh::json added_json = svh::json::array();
+		svh::json changed_json = svh::json::array();
 
 		for (size_t k = 0; k < ops.size(); ++k) {
 			auto& o = ops[k];
 
 			// — only recurse for sequence‐like Elems (e.g. vector<...>, list<...>, but not int) —
-			if constexpr (svh::has_begin_end_v<Elem> && !svh::is_string_type_v<Elem>) {
+			if constexpr (!svh::is_string_type_v<Elem>) {
 				if (o.type == dtl::SES_DELETE) {
 					// find the matching ADD for this delete, anywhere after it
 					auto it = std::find_if(
@@ -674,41 +675,60 @@ namespace std {
 						Elem oldInner = left[o.beforeIdx];
 						Elem newInner = right[o.beforeIdx];
 						svh::json innerDiff = svh::Compare::GetChanges(oldInner, newInner);
+						auto dump = innerDiff.dump();
 
-						// flatten any removed indices
-						if (innerDiff.contains(svh::REMOVED_INDICES)) {
-							for (auto& innerIdx : innerDiff[svh::REMOVED_INDICES]) {
-								svh::json path = svh::json::array();
-								path.push_back(o.beforeIdx);
-								if (innerIdx.is_array()) {
-									for (auto& e : innerIdx)
-										path.push_back(e);
-								} else {
-									path.push_back(innerIdx);
+						it->type = dtl::SES_COMMON;
+
+						if (innerDiff.contains(svh::REMOVED) || innerDiff.contains(svh::ADDED_VALUES)) {
+							// flatten any removed indices
+							if (innerDiff.contains(svh::REMOVED)) {
+								for (auto& innerIdx : innerDiff[svh::REMOVED]) {
+									svh::json path = svh::json::array();
+									path.push_back(o.beforeIdx);
+									if (innerIdx.is_array()) {
+										for (auto& e : innerIdx)
+											path.push_back(e);
+									} else {
+										path.push_back(innerIdx);
+									}
+									removed_json.push_back(std::move(path));
 								}
-								removed_json.push_back(std::move(path));
 							}
+
+							// flatten any added values
+							if (innerDiff.contains(svh::ADDED_VALUES)) {
+								for (auto& item : innerDiff[svh::ADDED_VALUES]) {
+									svh::json idx = item[svh::INDEX];
+									svh::json path = svh::json::array();
+									path.push_back(o.beforeIdx);
+									if (idx.is_array()) {
+										for (auto& e : idx)
+											path.push_back(e);
+									} else {
+										path.push_back(idx);
+									}
+									svh::json entry = svh::json::object({
+										{ svh::INDEX, std::move(path) },
+										{ svh::VALUE, item[svh::VALUE] }
+										});
+									added_json.push_back(std::move(entry));
+								}
+							}
+						} else if (!innerDiff.empty()) {
+							// index path
+							svh::json idx = svh::json::array({ o.beforeIdx });
+							// push a “changed‐value” entry so the top‐level JSON
+							// will pick it up under "added" (or you could create
+							// a new key like "modified_values")
+							changed_json.push_back(
+								svh::json::object({
+									{ svh::INDEX, std::move(idx) },
+									{ svh::VALUE, std::move(innerDiff) }
+									})
+							);
 						}
 
-						// flatten any added values
-						if (innerDiff.contains(svh::ADDED_VALUES)) {
-							for (auto& item : innerDiff[svh::ADDED_VALUES]) {
-								svh::json idx = item[svh::INDEX];
-								svh::json path = svh::json::array();
-								path.push_back(o.beforeIdx);
-								if (idx.is_array()) {
-									for (auto& e : idx)
-										path.push_back(e);
-								} else {
-									path.push_back(idx);
-								}
-								svh::json entry = svh::json::object({
-									{ svh::INDEX, std::move(path) },
-									{ svh::VALUE, item[svh::VALUE] }
-									});
-								added_json.push_back(std::move(entry));
-							}
-						}
+
 
 						// mark that ADD as “used” so we don’t emit it again
 						it->type = dtl::SES_COMMON;
@@ -733,10 +753,60 @@ namespace std {
 		}
 
 		svh::json result = svh::json::object();
-		if (!removed_json.empty()) result[svh::REMOVED_INDICES] = std::move(removed_json);
+		if (!removed_json.empty()) result[svh::REMOVED] = std::move(removed_json);
 		if (!added_json.empty())   result[svh::ADDED_VALUES] = std::move(added_json);
+		if (!changed_json.empty()) result[svh::CHANGED_VALUES] = std::move(changed_json);
 		return result;
 	}
+
+	// SFINAE‐guard: only pick this when Map is an associative container
+	template<typename Map>
+	static inline auto CompareImpl(const Map& left, const Map& right)
+		-> svh::enable_if_associative_map<Map, svh::json> {
+		using Key = typename Map::key_type;
+		using Value = typename Map::mapped_type;
+
+		svh::json added_entries = svh::json::array();
+		svh::json removed_keys = svh::json::array();
+		svh::json changed = svh::json::object();
+
+		// 1) scan additions in `right`
+		for (auto const& item : right) {
+			auto const& k = item.first;
+			auto const& v = item.second;
+			if (left.find(k) == left.end()) {
+				added_entries.push_back(svh::Serializer::ToJson(item));
+			}
+		}
+
+
+		// 2) scan removals in `left`
+		for (auto const& [k, v] : left) {
+			if (right.find(k) == right.end()) {
+				removed_keys.push_back(svh::Serializer::ToJson(k));
+			}
+		}
+
+		// 3) scan common keys for internal changes
+		for (auto const& [k, v] : left) {
+			auto rit = right.find(k);
+			if (rit != right.end()) {
+				auto cd = svh::Compare::GetChanges(v, rit->second);
+				if (!cd.empty()) {
+					changed[svh::Serializer::ToJson(k).get<std::string>()] = cd;
+				}
+			}
+		}
+
+		// 3) build the result only with non-empty arrays/objects
+		svh::json result = svh::json::object();
+		if (!removed_keys.empty()) result[svh::REMOVED] = std::move(removed_keys);
+		if (!changed.empty()) result[svh::CHANGED_VALUES] = std::move(changed);
+		if (!added_entries.empty()) result[svh::ADDED_VALUES] = std::move(added_entries);
+		return result;
+	}
+
+
 
 	/* For unique pointers */
 	template<typename T, typename Deleter>

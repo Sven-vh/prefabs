@@ -168,7 +168,7 @@ public:
 		std::vector<int> left{ 1,2,3 };
 		std::vector<int> right{ 4,5,6 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				{0},{1},{2}
 			  })
@@ -221,7 +221,7 @@ public:
 		std::vector<std::vector<int>> left{ {1, 2}, {3, 4} };
 		std::vector<std::vector<int>> right{ {1, 5}, {3, 4} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 1})
 			  })
@@ -258,7 +258,7 @@ public:
 		std::vector<std::vector<int>> left{ {1, 2}, {3, 4}, {5, 6} };
 		std::vector<std::vector<int>> right{ {1, 2}, {3, 4} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json({2})
 			  })
@@ -283,7 +283,7 @@ public:
 		std::vector<std::vector<std::vector<int>>> left{ {{1,2}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1,3}} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0, 1})
 			  })
@@ -314,7 +314,7 @@ public:
 
 		svh::json expected = {
 			// We expect two removals: 5 at [1,0,0] and 6 at [1,0,1]
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({1, 0, 0}),
 				  svh::json::array({1, 0, 1})
@@ -361,7 +361,7 @@ public:
 		std::vector<std::vector<std::vector<int>>> left{ {{1,2,3}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1,2}} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0, 2})
 			  })
@@ -393,7 +393,7 @@ public:
 		std::vector<std::vector<std::vector<int>>> left{ {{1}, {2}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1}} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 1})
 			  })
@@ -427,7 +427,7 @@ public:
 		std::vector<std::vector<std::vector<int>>> left{ {{1}}, {{2}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1}} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json({1})
 			  })
@@ -447,7 +447,7 @@ public:
 		std::vector<bool> left{ true, false, true };
 		std::vector<bool> right{ false, false, true };
 		svh::json expected = {
-		  { svh::REMOVED_INDICES, svh::json::array({ {0} }) },
+		  { svh::REMOVED, svh::json::array({ {0} }) },
 		  { svh::ADDED_VALUES, svh::json::array({
 			  svh::json({
 				{ svh::INDEX, { 1 } },
@@ -478,7 +478,7 @@ public:
 		std::vector<bool> left{ true, false, true };
 		std::vector<bool> right{ true, false };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ {2} })
 			}
 		};
@@ -495,7 +495,7 @@ public:
 		std::array<float, 3> b{ {4.0f,5.0f,6.0f} };
 		// {"removed indices":[[0],[1],[2]],"added":[{"index":[0],"value":4.0},{"index":[1],"value":5.0},{"index":[2],"value":6.0}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -529,7 +529,7 @@ public:
 		std::array<std::array<int, 2>, 2> a{ { {1,2}, {3,4} } };
 		std::array<std::array<int, 2>, 2> b{ { {1,5}, {3,4} } };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 1})
 			  })
@@ -555,7 +555,7 @@ public:
 		std::array<std::array<std::array<int, 2>, 2>, 2> a{ {{{{{1, 2}}, {{3, 4}}}}, {{{{5, 6}}, {{7, 8}}}}} };
 		std::array<std::array<std::array<int, 2>, 2>, 2> b{ {{{{{1, 2}}, {{3, 4}}}}, {{{{5, 9}}, {{7, 8}}}}} };
 		svh::json expected = {
-		  { svh::REMOVED_INDICES,
+		  { svh::REMOVED,
 			svh::json::array({
 			  svh::json::array({1, 0, 1})
 			})
@@ -584,7 +584,7 @@ public:
 		std::set<int> A{ 5,6,7 };
 		std::set<int> B{ 8,9,10 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -622,7 +622,7 @@ public:
 		std::set<std::set<int>> B{ {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0}),
 				  svh::json::array({0, 1}),
@@ -667,7 +667,7 @@ public:
 		std::unordered_set<int> A{ 8,9,10 };
 		std::unordered_set<int> B{ 11,12,13 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -712,7 +712,7 @@ public:
 		std::multiset<int> A{ 1,2,2,3 };
 		std::multiset<int> B{ 4,5,6 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2},{3}
 			  })
@@ -741,7 +741,7 @@ public:
 		std::multiset<std::multiset<int>> B{ {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0}),
 				  svh::json::array({0, 1}),
@@ -785,7 +785,7 @@ public:
 		std::unordered_multiset<std::string> A{ "a","b","a" };
 		std::unordered_multiset<std::string> B{ "c","d","e" };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -824,7 +824,7 @@ public:
 		std::deque<int> A{ 11,12,13 };
 		std::deque<int> B{ 14,15,16 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -867,7 +867,7 @@ public:
 		std::deque<int> A{ 11,12,13 };
 		std::deque<int> B{ 11,12 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({{ 2 }})
 			}
 		};
@@ -883,7 +883,7 @@ public:
 		std::deque<std::deque<int>> B{ {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0}),
 				  svh::json::array({0, 1}),
@@ -928,7 +928,7 @@ public:
 		std::list<int> A{ 14,15,16 };
 		std::list<int> B{ 17,18,19 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -971,7 +971,7 @@ public:
 		std::list<int> A{ 14,15,16 };
 		std::list<int> B{ 14,15 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ {2} })
 			}
 		};
@@ -987,7 +987,7 @@ public:
 		std::list<std::list<int>> B{ {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0}),
 				  svh::json::array({0, 1}),
@@ -1029,7 +1029,7 @@ public:
 		std::initializer_list<int> A{ 17,18,19 };
 		std::initializer_list<int> B{ 20,21,22 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -1072,7 +1072,7 @@ public:
 		std::initializer_list<int> A{ 17,18,19 };
 		std::initializer_list<int> B{ 17,18 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ {2} })
 			}
 		};
@@ -1088,7 +1088,7 @@ public:
 		std::initializer_list<std::initializer_list<int>> B{ {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0}),
 				  svh::json::array({0, 1}),
@@ -1133,7 +1133,7 @@ public:
 		int arr[] = { 20,21,22 };
 		int arr2[] = { 23,24,25 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -1174,7 +1174,7 @@ public:
 		int arr2[2][2] = { {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0,0},{0,1},{1,0},{1,1}
 			  })
@@ -1216,7 +1216,7 @@ public:
 		std::forward_list<int> A{ 1,2,3 };
 		std::forward_list<int> B{ 4,5,6 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1},{2}
 			  })
@@ -1259,7 +1259,7 @@ public:
 		std::forward_list<int> A{ 1,2,3 };
 		std::forward_list<int> B{ 1,2 };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ {2} })
 			}
 		};
@@ -1275,7 +1275,7 @@ public:
 		std::forward_list<std::forward_list<int>> B{ {5,6}, {7,8} };
 		//{"removed indices":[[0,0],[0,1],[1,0],[1,1]],"added":[{"index":[0,0],"value":5},{"index":[0,1],"value":6},{"index":[1,0],"value":7},{"index":[1,1],"value":8}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  svh::json::array({0, 0}),
 				  svh::json::array({0, 1}),
@@ -1318,7 +1318,7 @@ public:
 		std::map<std::string, int> A{ {"one",1},{"two",2} };
 		std::map<std::string, int> B{ {"three",3},{"four",4} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1358,7 +1358,7 @@ public:
 		std::map<std::string, int> A{ {"one",1},{"two",2} };
 		std::map<std::string, int> B{ {"one",1} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ {1} })
 			}
 		};
@@ -1385,7 +1385,7 @@ public:
 			{"second",{{"c",7},{"d",8}}}
 		};
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1416,7 +1416,7 @@ public:
 		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_map<std::string, int> B{ {"c",3},{"d",4} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1455,7 +1455,7 @@ public:
 		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_map<std::string, int> B{ {"a",1} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({{ 1 }})
 			}
 		};
@@ -1482,7 +1482,7 @@ public:
 			{"second",{{"c",7},{"d",8}}}
 		};
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1513,7 +1513,7 @@ public:
 		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::multimap<std::string, int> B{ {"c",3},{"d",4} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1552,7 +1552,7 @@ public:
 		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::multimap<std::string, int> B{ {"a",1} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({{ 1 }})
 			}
 		};
@@ -1579,7 +1579,7 @@ public:
 			{"second",{{"c",7},{"d",8}}}
 		};
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1610,7 +1610,7 @@ public:
 		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_multimap<std::string, int> B{ {"c",3},{"d",4} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1649,7 +1649,7 @@ public:
 		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_multimap<std::string, int> B{ {"a",1} };
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({{ 1 }})
 			}
 		};
@@ -1676,7 +1676,7 @@ public:
 			{"second",{{"c",7},{"d",8}}}
 		};
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({
 				  {0},{1}
 			  })
@@ -1738,7 +1738,7 @@ public:
 		std::tuple<int, int> B{ 1,4 };
 		//{"removed indices":[[1]],"added":[{"index":[1],"value":4}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ {1} })
 			},
 			{ svh::ADDED_VALUES,
@@ -1762,7 +1762,7 @@ public:
 		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {1,6}, {3,4} };
 		//{"removed indices":[[0,1]],"added":[{"index":[0,1],"value":6}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ { 0,1 } })
 			},
 			{ svh::ADDED_VALUES,
@@ -1782,7 +1782,7 @@ public:
 		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {1,6}, {3,8} };
 		//{"removed indices":[[0],[1]],"added":[{"index":[0],"value":[1,6]},{"index":[1],"value":[3,8]}]}
 		svh::json expected = {
-			{ svh::REMOVED_INDICES,
+			{ svh::REMOVED,
 			  svh::json::array({ { 0,1 },{ 1,1 } })
 			},
 			{ svh::ADDED_VALUES,
@@ -2138,10 +2138,12 @@ public:
 		auto A = CreateComplexNestedObject();
 		auto B = CreateComplexNestedObject();
 		B.weapons[0]->damage = 20;
+		B.transform->position = { 4.0f, 5.0f, 6.0f };
+		B.armors["body"]->defense = 10;
 		//{"weapons":{"removed indices":[[0]],"added":[{"index":[0],"value":{"name":"Sword","damage":20}}]}}
 		svh::json expected = svh::json::object({
 			{ "weapons", svh::json::object({
-				{ svh::REMOVED_INDICES,
+				{ svh::REMOVED,
 				  svh::json::array({ { 0 } })
 				},
 				{ svh::ADDED_VALUES,

@@ -127,13 +127,29 @@ namespace svh {
 	struct is_associative_map : std::false_type {};
 
 	template<typename T>
-	struct is_associative_map<T,
-		std::void_t<typename T::key_type,
-		typename T::mapped_type>>
-		: std::true_type {};
+	struct is_associative_map<T, std::void_t<
+		typename T::key_type,
+		typename T::mapped_type,
+		typename T::value_type,
+		// ensure ::value_type is pair<const K, M>
+		std::enable_if_t<
+		std::is_same_v<
+		typename T::value_type,
+		std::pair<const typename T::key_type,
+		typename T::mapped_type>
+		>,
+		void>,
+		// ensure lookup exists
+		decltype(std::declval<T>().find(std::declval<typename T::key_type>())),
+		// ensure iteration exists
+		decltype(std::declval<T>().begin()),
+		decltype(std::declval<T>().end())
+		>>
+		: std::true_type{};
 
 	template<typename T>
-	constexpr bool is_associative_map_v = is_associative_map<T>::value;
+	inline constexpr bool is_associative_map_v = is_associative_map<T>::value;
+
 
 	template<typename T, typename R = void>
 	using enable_if_associative_map = std::enable_if_t<is_associative_map_v<T>, R>;
@@ -242,8 +258,9 @@ namespace svh {
 	using enable_if_has_compare = std::enable_if_t<has_compare_v<T>, R>;
 
 	/* For json key names */
-	constexpr char REMOVED_INDICES[] = "removed indices";
+	constexpr char REMOVED[] = "removed";
 	constexpr char ADDED_VALUES[] = "added";
+	constexpr char CHANGED_VALUES[] = "changed";
 	constexpr char INDEX[] = "index";
 	constexpr char VALUE[] = "value";
 	constexpr char FIRST[] = "first";
@@ -297,7 +314,7 @@ namespace svh {
 	auto to_std_vector(const std::tuple<Args...>& t)
 		-> std::enable_if_t < (sizeof...(Args) > 0),
 		decltype(to_std_vector_impl(t, std::index_sequence_for<Args...>{}))
-		>
+	>
 	{
 		return to_std_vector_impl(t, std::index_sequence_for<Args...>{});
 	}
