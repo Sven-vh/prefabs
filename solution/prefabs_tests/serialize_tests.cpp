@@ -334,7 +334,7 @@ public:
 public:
 	TEST_METHOD(Pair) {
 		std::pair<int, std::string> p{ 7, "seven" };
-		CheckSerialization(p, svh::json::array({ 7,"seven" }));
+		CheckSerialization(p, svh::json::object({ { "7","seven" } }));
 	}
 
 	TEST_METHOD(Tuple) {

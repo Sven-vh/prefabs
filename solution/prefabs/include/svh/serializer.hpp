@@ -100,8 +100,6 @@ namespace svh {
 			auto it = input.find(name);
 			if (it != input.end()) {
 				DeserializeImpl(it.value(), value);
-			} else {
-				HandleError(name, input);
 			}
 		}
 
@@ -241,7 +239,39 @@ namespace svh {
 			}
 			return {};
 		}
+	};
 
+	template<typename T>
+	auto UserDefinedOverwriteImpl(const json& j, T& value)
+		-> decltype(OverwriteImpl(j, value)) {
+		OverwriteImpl(j, value);
+	}
+
+	class Overwrite {
+	public:
+		/* For users */
+		template<typename T>
+		static void FromJson(const json& j, T& value) {
+			if (j.is_null()) {
+				return;
+			}
+			OverwriteImpl(j, value);
+		}
+	private: /* Functions */
+
+		/* For userdefined overwrites*/
+		template<typename T>
+		static auto OverwriteImpl(const json& j, T& value)
+			-> enable_if_has_overwrite<T, void> {
+			return UserDefinedOverwriteImpl(j, value);
+		}
+
+		/* For everything else */
+		template<typename T>
+		static auto OverwriteImpl(const json& j, T& value)
+			-> std::enable_if_t<svh::has_overwrite_v<T> == false, void> {
+			svh::Deserializer::FromJson(j, value);
+		}
 	};
 }
 

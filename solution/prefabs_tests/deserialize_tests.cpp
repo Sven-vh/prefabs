@@ -48,9 +48,9 @@ namespace deserialize_tests {
 			Assert::Fail(to_wstring(std::string("Exception thrown: ") + ex.what()).c_str());
 		}
 		// compare wstring’d JSON
-		std::wstring wResult = to_wstring(resultDump);
+		std::wstring wResult = to_wstring("\n"+resultDump+ "\n");
 		std::string expectedDump = inputJson.dump();
-		std::wstring wExpected = to_wstring(expectedDump);
+		std::wstring wExpected = to_wstring("\n" +expectedDump+ "\n");
 		Assert::AreEqual(wExpected, wResult, message);
 		// put result in the log
 		Logger::WriteMessage(wResult.c_str());
@@ -327,7 +327,7 @@ public:
 public:
 	TEST_METHOD(Pair) {
 		std::pair<int, std::string> p{ 7, "seven" };
-		CheckDeserialization(p, svh::json::array({ 7,"seven" }));
+		CheckDeserialization(p, svh::json::object({ { "7","seven" } }));
 	}
 
 	TEST_METHOD(Tuple) {

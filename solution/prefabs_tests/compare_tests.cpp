@@ -41,8 +41,56 @@ namespace compare_tests {
 		std::wstring wExpected = to_wstring("\n" + expectedDump + "\n");
 		Assert::AreEqual(wExpected, wResult, L"\nCompare output did not match expected JSON");
 		// put result in the log
+		wResult = to_wstring("Changes: \n" + resultDump + "\n");
 		Logger::WriteMessage(wResult.c_str());
 	}
+
+	template<typename T>
+	void CheckOverwrite(const T& left, const T& right) {
+		auto before_serialized = svh::Serializer::ToJson(left).dump();
+		svh::json before_changes;
+		try {
+			before_changes = svh::Compare::GetChanges(left, right);
+		} catch (const std::exception& ex) {
+			Assert::Fail(to_wstring(std::string("Exception thrown: ") + ex.what()).c_str());
+		}
+
+		if (before_changes.empty()) {
+			// no changes, since the left and right are the same
+			Assert::AreEqual(before_changes.dump(), svh::json().dump(), L"\nCompare output did not match expected JSON");
+			// put result in the log
+			std::wstring wResult = to_wstring("\n" + before_changes.dump() + "\n");
+			Logger::WriteMessage(wResult.c_str());
+			return;
+		}
+
+		auto dump = before_changes.dump();
+		T left_copy = left;
+		svh::Overwrite::FromJson(before_changes, left_copy);
+
+		svh::json after_changes;
+		try {
+			after_changes = svh::Compare::GetChanges(left_copy, right);
+		} catch (const std::exception& ex) {
+			Assert::Fail(to_wstring(std::string("Exception thrown: ") + ex.what()).c_str());
+		}
+
+		auto after_serialized = svh::Serializer::ToJson(left_copy).dump();
+
+		//log before and after
+		std::wstring wBefore = to_wstring("\nBefore: " + before_serialized + "\n");
+		std::wstring wAfter = to_wstring("\nAfter: " + after_serialized + "\n");
+		Logger::WriteMessage(wBefore.c_str());
+		Logger::WriteMessage(wAfter.c_str());
+
+		//after changes should be empty
+		std::wstring wResult = to_wstring("\n" + after_changes.dump() + "\n");
+		std::wstring expectedDump = to_wstring("\n" + svh::json().dump() + "\n");
+		Assert::AreEqual(expectedDump, wResult, L"\nCompare output did not match expected JSON");
+		// put result in the log
+		Logger::WriteMessage(wResult.c_str());
+	}
+
 	/* Primitive Types */
 	TEST_CLASS(DefaultTypes) {
 public:
@@ -51,30 +99,35 @@ public:
 		int left = 1;
 		int right = 2;
 		CheckCompare(left, right, svh::json(2));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(Double) { CheckSerialization(3.14, svh::json(3.14)); }
 	TEST_METHOD(Double) {
 		double left = 3.14;
 		double right = 2.71;
 		CheckCompare(left, right, svh::json(2.71));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(Float) { CheckSerialization(1.0f, svh::json(1.0f)); }
 	TEST_METHOD(Float) {
 		float left = 1.0f;
 		float right = 2.0f;
 		CheckCompare(left, right, svh::json(2.0f));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(Bool) { CheckSerialization(true, svh::json(true)); }
 	TEST_METHOD(Bool) {
 		bool left = true;
 		bool right = false;
 		CheckCompare(left, right, svh::json(false));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(Char) { CheckSerialization('a', svh::json('a')); }
 	TEST_METHOD(Char) {
 		char left = 'a';
 		char right = 'b';
 		CheckCompare(left, right, svh::json('b'));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(CString) {
 	//	const char* cstr = "hello";
@@ -84,6 +137,7 @@ public:
 		const char* left = "hello";
 		const char* right = "world";
 		CheckCompare(left, right, svh::json("world"));
+		//CheckOverride(left, right); // CString is not assignable
 	}
 	//TEST_METHOD(String) {
 	//	std::string s = "hello";
@@ -93,6 +147,7 @@ public:
 		std::string left = "hello";
 		std::string right = "world";
 		CheckCompare(left, right, svh::json("world"));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(StringEscaping) {
 	//	std::string s = "He said: \"\\Hello\n\"";
@@ -102,6 +157,7 @@ public:
 		std::string left = "He said: \"\\Hello\n\"";
 		std::string right = "He said: \"\\World\n\"";
 		CheckCompare(left, right, svh::json("He said: \"\\World\n\""));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(UnicodeString) {
 	//	std::string s = u8"π≈3.14";
@@ -111,6 +167,7 @@ public:
 		std::string left = u8"π≈3.14";
 		std::string right = u8"π≈2.71";
 		CheckCompare(left, right, svh::json(u8"π≈2.71"));
+		CheckOverwrite(left, right);
 	}
 	//TEST_METHOD(StringView) {
 	//	std::string_view sv = "viewed";
@@ -120,6 +177,7 @@ public:
 		std::string_view left = "viewed";
 		std::string_view right = "seen";
 		CheckCompare(left, right, svh::json("seen"));
+		CheckOverwrite(left, right);
 	}
 	};
 
@@ -134,6 +192,7 @@ public:
 		Color left = Color::Green;
 		Color right = Color::Blue;
 		CheckCompare(left, right, svh::json("Blue"));
+		CheckOverwrite(left, right);
 	}
 	//	TEST_METHOD(DirectionEnum) {
 	//		Direction d = Direction::South;
@@ -143,6 +202,7 @@ public:
 		Direction left = Direction::South;
 		Direction right = Direction::North;
 		CheckCompare(left, right, svh::json("North"));
+		CheckOverwrite(left, right);
 	}
 	//	TEST_METHOD(EnumClassAsInt) {
 	//		int i = static_cast<int>(Color::Red);
@@ -152,6 +212,7 @@ public:
 		int left = static_cast<int>(Color::Red);
 		int right = static_cast<int>(Color::Green);
 		CheckCompare(left, right, svh::json(1));
+		CheckOverwrite(left, right);
 	}
 	};
 
@@ -163,6 +224,7 @@ public:
 		std::vector<int> left{ 1,2,3 };
 		std::vector<int> right{ 1,2,3 };
 		CheckCompare(left, right, svh::json());
+		CheckOverwrite(left, right);
 	}
 	TEST_METHOD(Vector_Changed) {
 		std::vector<int> left{ 1,2,3 };
@@ -186,6 +248,7 @@ public:
 		};
 
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 	TEST_METHOD(Vector_Added) {
 		std::vector<int> left{ 1,2,3 };
@@ -203,6 +266,20 @@ public:
 		};
 
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
+	}
+	TEST_METHOD(Vector_Removed) {
+		std::vector<int> left{ 1,2,3,4 };
+		std::vector<int> right{ 1,2,3 };
+		svh::json expected = {
+			{ svh::REMOVED,
+			  svh::json::array({
+				  svh::json({3})
+			  })
+			}
+		};
+		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	/* Vector 2-depth */
@@ -210,6 +287,7 @@ public:
 		std::vector<std::vector<int>> left{ {1, 2}, {3, 4} };
 		std::vector<std::vector<int>> right{ {1, 2}, {3, 4} };
 		CheckCompare(left, right, svh::json());
+		CheckOverwrite(left, right);
 	}
 
 	TEST_METHOD(VectorOfVector_ChangedInner) {
@@ -232,6 +310,7 @@ public:
 			})}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	TEST_METHOD(VectorOfVector_AddedRow) {
@@ -248,6 +327,7 @@ public:
 			}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	TEST_METHOD(VectorOfVector_RemovedRow) {
@@ -261,6 +341,7 @@ public:
 			}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	/* Vector 3-depth */
@@ -272,6 +353,7 @@ public:
 		};
 		auto right = left;
 		CheckCompare(left, right, svh::json());
+		CheckOverwrite(left, right);
 	}
 
 	// 2) Change at the deepest level
@@ -302,6 +384,7 @@ public:
 			})}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 	TEST_METHOD(Vector3_ChangedMid) {
 		std::vector<std::vector<std::vector<int>>> left{
@@ -342,6 +425,7 @@ public:
 		};
 
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 
@@ -349,31 +433,59 @@ public:
 	TEST_METHOD(Vector3_AddedDeepest) {
 		std::vector<std::vector<std::vector<int>>> left{ {{1,2}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1,2,3}} };
+		// {"changed":[{"index":[0],"value":{"changed":[{"index":[0],"value":{"added":[{"index":[2],"value":3}]}}]}}]}
 		svh::json expected = {
-			{ svh::ADDED_VALUES,
-			  svh::json::array({
-				  svh::json({
-					  { svh::INDEX, svh::json::array({0, 0, 2}) },
-					  { svh::VALUE, 3 }
-				  })
-			  })
-			}
+			{ svh::CHANGED_VALUES, svh::json::array({
+				{
+					{ svh::INDEX, { 0 } },
+					{ svh::VALUE, {
+						{ svh::CHANGED_VALUES, svh::json::array({
+							{
+								{ svh::INDEX, { 0 } },
+								{ svh::VALUE, {
+									{ svh::ADDED_VALUES, svh::json::array({
+										{
+											{ svh::INDEX, { 2 } },
+											{ svh::VALUE, 3 }
+										}
+									})}
+								}}
+							}
+						})}
+					}}
+				}
+			})}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	// 4) Remove an element at the deepest level
 	TEST_METHOD(Vector3_RemovedDeepest) {
 		std::vector<std::vector<std::vector<int>>> left{ {{1,2,3}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1,2}} };
+		//{"changed":[{"index":[0],"value":{"changed":[{"index":[0],"value":{"removed":[[2]]}}]}}]}
 		svh::json expected = {
-			{ svh::REMOVED,
-			  svh::json::array({
-				  svh::json::array({0, 0, 2})
-			  })
-			}
+			{ svh::CHANGED_VALUES, svh::json::array({
+				{
+					{ svh::INDEX, { 0 } },
+					{ svh::VALUE, {
+						{ svh::CHANGED_VALUES, svh::json::array({
+							{
+								{ svh::INDEX, { 0 } },
+								{ svh::VALUE, {
+									{ svh::REMOVED, svh::json::array({
+										svh::json({2})
+									})}
+								}}
+							}
+						})}
+					}}
+				}
+			})}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	// 5) Add a new “row” at the mid (2nd) level
@@ -381,31 +493,45 @@ public:
 		// Outer[0] initially has 1 inner vector; we’re inserting a second inner vector {2}
 		std::vector<std::vector<std::vector<int>>> left{ {{1}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1}, {2}} };
+		//{"changed":[{"index":[0],"value":{"added":[{"index":[1],"value":[2]}]}}]}
 		svh::json expected = {
-			{ svh::ADDED_VALUES,
-			  svh::json::array({
-				  svh::json({
-					  { svh::INDEX, svh::json::array({0, 1}) },
-					  { svh::VALUE, svh::json::array({2}) }
-				  })
-			  })
-			}
+			{ svh::CHANGED_VALUES, svh::json::array({
+				{
+					{ svh::INDEX, { 0 } },
+					{ svh::VALUE, {
+						{ svh::ADDED_VALUES, svh::json::array({
+							{
+								{ svh::INDEX, { 1 } },
+								{ svh::VALUE, svh::json::array({2}) }
+							}
+						})}
+					}}
+				}
+			})}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	// 6) Remove a “row” at the mid level
 	TEST_METHOD(Vector3_RemovedMid) {
 		std::vector<std::vector<std::vector<int>>> left{ {{1}, {2}} };
 		std::vector<std::vector<std::vector<int>>> right{ {{1}} };
+		//{"changed":[{"index":[0],"value":{"removed":[[1]]}}]}
 		svh::json expected = {
-			{ svh::REMOVED,
-			  svh::json::array({
-				  svh::json::array({0, 1})
-			  })
-			}
+			{ svh::CHANGED_VALUES, svh::json::array({
+				{
+					{ svh::INDEX, { 0 } },
+					{ svh::VALUE, {
+						{ svh::REMOVED, svh::json::array({
+							svh::json({1})
+						})}
+					}}
+				}
+			})}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	// 7) Add a new “slice” at the outer level
@@ -426,6 +552,7 @@ public:
 			}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	// 8) Remove a “slice” at the outer level
@@ -440,6 +567,7 @@ public:
 			}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	/* Vector of bool */
@@ -447,6 +575,7 @@ public:
 		std::vector<bool> left{ true, false, true };
 		std::vector<bool> right{ true, false, true };
 		CheckCompare(left, right, svh::json());
+		CheckOverwrite(left, right);
 	}
 
 	TEST_METHOD(VectorOfBool_Changed) {
@@ -462,6 +591,7 @@ public:
 		  })}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	TEST_METHOD(VectorOfBool_Added) {
@@ -478,6 +608,7 @@ public:
 			}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 
 	TEST_METHOD(VectorOfBool_Removed) {
@@ -489,12 +620,14 @@ public:
 			}
 		};
 		CheckCompare(left, right, expected);
+		CheckOverwrite(left, right);
 	}
 	/* Arrays */
 	TEST_METHOD(Array) {
 		std::array<float, 3> a{ {1.0f,2.0f,3.0f} };
 		std::array<float, 3> b{ {1.0f,2.0f,3.0f} };
 		CheckCompare(a, b, svh::json());
+		CheckOverwrite(a, b);
 	}
 	TEST_METHOD(ChangedArray) {
 		std::array<float, 3> a{ {1.0f,2.0f,3.0f} };
@@ -517,12 +650,14 @@ public:
 			})
 		} };
 		CheckCompare(a, b, expected);
+		CheckOverwrite(a, b);
 	}
 	/* Array 2-depth */
 	TEST_METHOD(ArrayOfArrays) {
 		std::array<std::array<int, 2>, 2> a{ { {1,2}, {3,4} } };
 		std::array<std::array<int, 2>, 2> b{ { {1,2}, {3,4} } };
 		CheckCompare(a, b, svh::json());
+		CheckOverwrite(a, b);
 	}
 	TEST_METHOD(ChangedArrayOfArrays) {
 		std::array<std::array<int, 2>, 2> a{ { {1,2}, {3,4} } };
@@ -545,12 +680,14 @@ public:
 		};
 
 		CheckCompare(a, b, expected);
+		CheckOverwrite(a, b);
 	}
 	/* Array 3-depth */
 	TEST_METHOD(ArrayOfArraysOfArrays) {
 		std::array<std::array<std::array<int, 2>, 2>, 2> a{ {{{{{1, 2}}, {{3, 4}}}}, {{{{5, 6}}, {{7, 8}}}}} };
 		std::array<std::array<std::array<int, 2>, 2>, 2> b{ {{{{{1, 2}}, {{3, 4}}}}, {{{{5, 6}}, {{7, 8}}}}} };
 		CheckCompare(a, b, svh::json());
+		CheckOverwrite(a, b);
 	}
 	TEST_METHOD(ChangedArrayOfArraysOfArrays) {
 		std::array<std::array<std::array<int, 2>, 2>, 2> a{ {{{{{1, 2}}, {{3, 4}}}}, {{{{5, 6}}, {{7, 8}}}}} };
@@ -579,6 +716,7 @@ public:
 			}) }
 		};
 		CheckCompare(a, b, expected);
+		CheckOverwrite(a, b);
 	}
 
 	/* Sets */
@@ -588,6 +726,7 @@ public:
 		std::set<int> A{ 5,6,7 };
 		std::set<int> B{ 5,6,7 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Set_Changed) {
 		std::set<int> A{ 5,6,7 };
@@ -610,6 +749,7 @@ public:
 			}) }
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	//TEST_METHOD(SetOfSets) {
 	//	std::set<std::set<int>> ss{ {1,2}, {3,4} };
@@ -619,6 +759,7 @@ public:
 		std::set<std::set<int>> A{ {1,2}, {3,4} };
 		std::set<std::set<int>> B{ {1,2}, {3,4} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(SetOfSets_Changed) {
 		std::set<std::set<int>> A{ {1,2}, {3,4} };
@@ -659,6 +800,7 @@ public:
 			})}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	///* Unordered sets */
 	//TEST_METHOD(UnorderedSet) {
@@ -669,6 +811,7 @@ public:
 		std::unordered_set<int> A{ 8,9,10 };
 		std::unordered_set<int> B{ 8,9,10 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedSet_Changed) {
 		std::unordered_set<int> A{ 8,9,10 };
@@ -691,6 +834,38 @@ public:
 			})}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
+	}
+	TEST_METHOD(UnorderedSet_Added) {
+		std::unordered_set<int> A{ 8,9,10 };
+		std::unordered_set<int> B{ 8,9,10,11 };
+		svh::json expected = {
+			{ svh::ADDED_VALUES,
+			  svh::json::array({
+				  svh::json({
+					  { svh::INDEX, { 3 } },
+					  { svh::VALUE, 11 }
+				  })
+			  })
+			}
+		};
+		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
+	}
+	TEST_METHOD(UnorderedSet_SingleChange) {
+		std::unordered_set<int> A{ 8,9,10 };
+		std::unordered_set<int> B{ 8,9,11 };
+		//{"changed":[{"index":[2],"value":11}]}
+		svh::json expected = {
+			{ svh::CHANGED_VALUES, svh::json::array({
+				{
+					{ svh::INDEX, { 2 } },
+					{ svh::VALUE, 11 }
+				}
+			})}
+		};
+		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	// 
 	//TEST_METHOD(EmptyUnorderedSet) {
@@ -708,6 +883,7 @@ public:
 		std::multiset<int> A{ 1,2,2,3 };
 		std::multiset<int> B{ 1,2,2,3 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Multiset_Changed) {
 		std::multiset<int> A{ 1,2,2,3 };
@@ -737,6 +913,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(MultisetOfMultisets_Changed) {
 		std::multiset<std::multiset<int>> A{ {1,2}, {3,4} };
@@ -777,6 +954,7 @@ public:
 			}) }
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	//TEST_METHOD(UnorderedMultiset) {
 	//	std::unordered_multiset<std::string> ums{ "a","b","a" };
@@ -786,6 +964,7 @@ public:
 		std::unordered_multiset<std::string> A{ "a","b","a" };
 		std::unordered_multiset<std::string> B{ "a","b","a" };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMultiset_Changed) {
 		std::unordered_multiset<std::string> A{ "a","b","a" };
@@ -814,6 +993,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	//
 	//	/* Deques */
@@ -825,6 +1005,7 @@ public:
 		std::deque<int> A{ 11,12,13 };
 		std::deque<int> B{ 11,12,13 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Deque_Changed) {
 		std::deque<int> A{ 11,12,13 };
@@ -849,6 +1030,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Deque_Added) {
 		std::deque<int> A{ 11,12,13 };
@@ -864,6 +1046,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Deque_Removed) {
 		std::deque<int> A{ 11,12,13 };
@@ -874,11 +1057,13 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(DequeOfDeques_Unchanged) {
 		std::deque<std::deque<int>> A{ {1,2}, {3,4} };
 		std::deque<std::deque<int>> B{ {1,2}, {3,4} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(DequeOfDeques_Changed) {
 		std::deque<std::deque<int>> A{ {1,2}, {3,4} };
@@ -918,16 +1103,14 @@ public:
 			})}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
-	//	/* Lists */
-	//	TEST_METHOD(List) {
-	//		std::list<int> l{ 14,15,16 };
-	//		CheckSerialization(l, svh::json::array({ 14,15,16 }));
-	//	}
+	/* Lists */
 	TEST_METHOD(List_Unchanged) {
 		std::list<int> A{ 14,15,16 };
 		std::list<int> B{ 14,15,16 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(List_Changed) {
 		std::list<int> A{ 14,15,16 };
@@ -952,6 +1135,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(List_Added) {
 		std::list<int> A{ 14,15,16 };
@@ -967,6 +1151,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(List_Removed) {
 		std::list<int> A{ 14,15,16 };
@@ -977,11 +1162,13 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ListOfLists_Unchanged) {
 		std::list<std::list<int>> A{ {1,2}, {3,4} };
 		std::list<std::list<int>> B{ {1,2}, {3,4} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ListOfLists_Changed) {
 		std::list<std::list<int>> A{ {1,2}, {3,4} };
@@ -1022,6 +1209,7 @@ public:
 			})}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	/* Initializer lists */
@@ -1131,6 +1319,13 @@ public:
 		int arr[] = { 20,21,22 };
 		int arr2[] = { 20,21,22 };
 		CheckCompare(arr, arr2, svh::json());
+		//CheckOverride(arr, arr2);
+
+		int copy[] = { 20,21,22 };
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(arr, arr2), copy);
+		auto changes2 = svh::Compare::GetChanges(arr2, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	TEST_METHOD(CStyleArray_Changed) {
 		int arr[] = { 20,21,22 };
@@ -1153,6 +1348,13 @@ public:
 			})
 		} };
 		CheckCompare(arr, arr2, expected);
+		//CheckOverride(arr, arr2);
+
+		int copy[] = { 20,21,22 };
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(arr, arr2), copy);
+		auto changes2 = svh::Compare::GetChanges(arr2, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	/* Added or Removed is maybe possible to compare but out of scope for this project*/
 
@@ -1165,6 +1367,13 @@ public:
 		int arr[2][2] = { {1,2}, {3,4} };
 		int arr2[2][2] = { {1,2}, {3,4} };
 		CheckCompare(arr, arr2, svh::json());
+		//CheckOverride(arr, arr2);
+
+		int copy[2][2] = { {1,2}, {3,4} };
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(arr, arr2), copy);
+		auto changes2 = svh::Compare::GetChanges(arr2, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	TEST_METHOD(CStyleArrayOfArrays_Changed) {
 		int arr[2][2] = { {1,2}, {3,4} };
@@ -1205,6 +1414,13 @@ public:
 			})
 		} };
 		CheckCompare(arr, arr2, expected);
+		//CheckOverride(arr, arr2);
+
+		int copy[2][2] = { {1,2}, {3,4} };
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(arr, arr2), copy);
+		auto changes2 = svh::Compare::GetChanges(arr2, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	//	/* Forward lists */
 	//	TEST_METHOD(ForwardList) {
@@ -1215,6 +1431,7 @@ public:
 		std::forward_list<int> A{ 1,2,3 };
 		std::forward_list<int> B{ 1,2,3 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ForwardsList_Changed) {
 		std::forward_list<int> A{ 1,2,3 };
@@ -1238,6 +1455,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ForwardsList_Added) {
 		std::forward_list<int> A{ 1,2,3 };
@@ -1253,6 +1471,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ForwardsList_Removed) {
 		std::forward_list<int> A{ 1,2,3 };
@@ -1263,11 +1482,13 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ForwardsListOfLists_Unchanged) {
 		std::forward_list<std::forward_list<int>> A{ {1,2}, {3,4} };
 		std::forward_list<std::forward_list<int>> B{ {1,2}, {3,4} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(ForwardsListOfLists_Changed) {
 		std::forward_list<std::forward_list<int>> A{ {1,2}, {3,4} };
@@ -1307,6 +1528,7 @@ public:
 			})}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	/* Map */
@@ -1315,36 +1537,39 @@ public:
 		std::map<std::string, int> A{ {"one",1},{"two",2} };
 		std::map<std::string, int> B{ {"one",1},{"two",2} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Map_Changed) {
 		std::map<std::string, int> A{ {"one",1},{"two",2} };
 		std::map<std::string, int> B{ {"three",3},{"four",4} };
-		//{"removed":["one","two"],"added":[["four",4],["three",3]]}
+		//{"removed":["one","two"],"added":[{"four":4},{"three":3}]}
 		svh::json expected = {
 			{ svh::REMOVED,
 			  svh::json::array({ "one", "two" })
 			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "four", 4 }),
-				  svh::json::array({ "three", 3 })
+				  svh::json::object({{ "four", 4 }}),
+				  svh::json::object({{ "three", 3 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Map_Added) {
 		std::map<std::string, int> A{ {"one",1},{"two",2} };
 		std::map<std::string, int> B{ {"one",1},{"two",2},{"three",3} };
-		//{"added":[["three",3]]}
+		//{"added":[{"three":3}]}
 		svh::json expected = {
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "three", 3 })
+				  svh::json::object({ { "three", 3 } })
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(Map_Removed) {
@@ -1356,6 +1581,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(MapOfMaps_Unchanged) {
 		std::map<std::string, std::map<std::string, int>> mm{
@@ -1367,6 +1593,7 @@ public:
 			{"second",{{"c",3},{"d",4}}}
 		};
 		CheckCompare(mm, mm2, svh::json());
+		CheckOverwrite(mm, mm2);
 	}
 	TEST_METHOD(MapOfMaps_Changed) {
 		std::map<std::string, std::map<std::string, int>> mm{
@@ -1395,6 +1622,7 @@ public:
 			}}
 		};
 		CheckCompare(mm, mm2, expected);
+		CheckOverwrite(mm, mm2);
 	}
 
 	/* Unordered map*/
@@ -1402,35 +1630,39 @@ public:
 		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_map<std::string, int> B{ {"a",1},{"b",2} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMap_Changed) {
 		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_map<std::string, int> B{ {"c",3},{"d",4} };
-		//{"removed":["a","b"],"added":[["c",3],["d",4]]}
+		//{"removed":["a","b"],"added":[{"c":3},{"d":4}]}
 		svh::json expected = {
 			{ svh::REMOVED,
 			  svh::json::array({ "a", "b" })
 			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "c", 3 }),
-				  svh::json::array({ "d", 4 })
+				  svh::json::object({{ "c", 3 }}),
+				  svh::json::object({{ "d", 4 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMap_Added) {
 		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_map<std::string, int> B{ {"a",1},{"b",2},{"c",3} };
+		//{"added":[{"c":3}]}
 		svh::json expected = {
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "c", 3 })
+				  svh::json::object({{ "c", 3 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMap_Removed) {
 		std::unordered_map<std::string, int> A{ {"a",1},{"b",2} };
@@ -1442,6 +1674,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMapOfMaps_Unchanged) {
 		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm{
@@ -1453,6 +1686,7 @@ public:
 			{"second",{{"c",3},{"d",4}}}
 		};
 		CheckCompare(umm, umm2, svh::json());
+		CheckOverwrite(umm, umm2);
 	}
 	TEST_METHOD(UnorderedMapOfMaps_Changed) {
 		std::unordered_map<std::string, std::unordered_map<std::string, int>> umm{
@@ -1481,6 +1715,7 @@ public:
 			}}
 		};
 		CheckCompare(umm, umm2, expected);
+		CheckOverwrite(umm, umm2);
 	}
 
 	/* Multimap */
@@ -1488,36 +1723,39 @@ public:
 		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::multimap<std::string, int> B{ {"a",1},{"b",2} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Multimap_Changed) {
 		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::multimap<std::string, int> B{ {"c",3},{"d",4} };
-		//{"removed":["a","b"],"added":[["c",3],["d",4]]}
+		//{"removed":["a","b"],"added":[{"c":3},{"d":4}]}
 		svh::json expected = {
 			{ svh::REMOVED,
 			  svh::json::array({ "a", "b" })
 			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "c", 3 }),
-				  svh::json::array({ "d", 4 })
+				  svh::json::object({{ "c", 3 }}),
+				  svh::json::object({{ "d", 4 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Multimap_Added) {
 		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::multimap<std::string, int> B{ {"a",1},{"b",2},{"c",3} };
-		//{"added":[["c",3]]}
+		//{"added":[{"c":3}]}
 		svh::json expected = {
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "c", 3 })
+				  svh::json::object({{ "c", 3 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Multimap_Removed) {
 		std::multimap<std::string, int> A{ {"a",1},{"b",2} };
@@ -1529,6 +1767,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(MultimapOfMaps_Unchanged) {
 		std::multimap<std::string, std::multimap<std::string, int>> mmm{
@@ -1540,6 +1779,7 @@ public:
 			{"second",{{"c",3},{"d",4}}}
 		};
 		CheckCompare(mmm, mmm2, svh::json());
+		CheckOverwrite(mmm, mmm2);
 	}
 	TEST_METHOD(MultimapOfMaps_Changed) {
 		std::multimap<std::string, std::multimap<std::string, int>> mmm{
@@ -1569,6 +1809,7 @@ public:
 		};
 
 		CheckCompare(mmm, mmm2, expected);
+		CheckOverwrite(mmm, mmm2);
 	}
 
 	/* Unordered multimap */
@@ -1576,36 +1817,39 @@ public:
 		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_multimap<std::string, int> B{ {"a",1},{"b",2} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMultimap_Changed) {
 		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_multimap<std::string, int> B{ {"c",3},{"d",4} };
-		//{"removed":["a","b"],"added":[["c",3],["d",4]]}
+		//{"removed":["a","b"],"added":[{"c":3},{"d":4}]}
 		svh::json expected = {
 			{ svh::REMOVED,
 			  svh::json::array({ "a", "b" })
 			},
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "c", 3 }),
-				  svh::json::array({ "d", 4 })
+				  svh::json::object({{ "c", 3 }}),
+				  svh::json::object({{ "d", 4 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMultimap_Added) {
 		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
 		std::unordered_multimap<std::string, int> B{ {"a",1},{"b",2},{"c",3} };
-		//{"added":[["c",3]]}
+		//{"added":[{"c":3}]}
 		svh::json expected = {
 			{ svh::ADDED_VALUES,
 			  svh::json::array({
-				  svh::json::array({ "c", 3 })
+				  svh::json::object({{ "c", 3 }})
 			  })
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMultimap_Removed) {
 		std::unordered_multimap<std::string, int> A{ {"a",1},{"b",2} };
@@ -1617,6 +1861,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(UnorderedMultimapOfMaps_Unchanged) {
 		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm{
@@ -1628,6 +1873,7 @@ public:
 			{"second",{{"c",3},{"d",4}}}
 		};
 		CheckCompare(ummm, ummm2, svh::json());
+		CheckOverwrite(ummm, ummm2);
 	}
 	TEST_METHOD(UnorderedMultimapOfMaps_Changed) {
 		std::unordered_multimap<std::string, std::unordered_multimap<std::string, int>> ummm{
@@ -1656,6 +1902,7 @@ public:
 			}}
 		};
 		CheckCompare(ummm, ummm2, expected);
+		CheckOverwrite(ummm, ummm2);
 	}
 	};
 
@@ -1667,6 +1914,7 @@ public:
 		std::pair<int, int> A{ 1,2 };
 		std::pair<int, int> B{ 1,2 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Pair_Changed) {
 		std::pair<int, int> A{ 1,2 };
@@ -1674,11 +1922,13 @@ public:
 		//{"second":4}
 		svh::json expected = svh::json({ { svh::SECOND, 4 } });
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(PairOfPairs_Unchanged) {
 		std::pair<std::pair<int, int>, std::pair<int, int>> A{ {1,2}, {3,4} };
 		std::pair<std::pair<int, int>, std::pair<int, int>> B{ {1,2}, {3,4} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(PairOfPairs_Changed) {
 		std::pair<std::pair<int, int>, std::pair<int, int>> A{ {1,2}, {3,4} };
@@ -1686,6 +1936,7 @@ public:
 		//{"first":{"first":5,"second":6},"second":{"first":7,"second":8}}
 		svh::json expected = svh::json({ { svh::FIRST, { { svh::FIRST, 5 } } }, { svh::SECOND, { { svh::FIRST, 7 }, { svh::SECOND, 8 } } } });
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	/* Tuple */
@@ -1693,6 +1944,7 @@ public:
 		std::tuple<int, int> A{ 1,2 };
 		std::tuple<int, int> B{ 1,2 };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(Tuple_Changed) {
 		std::tuple<int, int> A{ 1,2 };
@@ -1709,11 +1961,13 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(TupleOfTuples_Unchanged) {
 		std::tuple<std::tuple<int, int>, std::tuple<int, int>> A{ {1,2}, {3,4} };
 		std::tuple<std::tuple<int, int>, std::tuple<int, int>> B{ {1,2}, {3,4} };
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(TupleOfTuples_Changed) {
 		std::tuple<std::tuple<int, int>, std::tuple<int, int>> A{ {1,2}, {3,4} };
@@ -1739,6 +1993,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(TupleOfTuples_Changed_Multiple) {
@@ -1778,6 +2033,7 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	};
@@ -1789,23 +2045,27 @@ public:
 			std::optional<int> opt = 99;
 			std::optional<int> opt2 = 99;
 			CheckCompare(opt, opt2, svh::json());
+			CheckOverwrite(opt, opt2);
 		}
 		TEST_METHOD(Optional_Changed) {
 			std::optional<int> opt = 99;
 			std::optional<int> opt2 = 100;
 			svh::json expected = svh::json(100);
 			CheckCompare(opt, opt2, expected);
+			CheckOverwrite(opt, opt2);
 		}
 		TEST_METHOD(OptionalOfOptional_Unchanged) {
 			std::optional<std::optional<int>> opt = 99;
 			std::optional<std::optional<int>> opt2 = 99;
 			CheckCompare(opt, opt2, svh::json());
+			CheckOverwrite(opt, opt2);
 		}
 		TEST_METHOD(OptionalOfOptional_Changed) {
 			std::optional<std::optional<int>> opt = 99;
 			std::optional<std::optional<int>> opt2 = 100;
 			svh::json expected = svh::json(100);
 			CheckCompare(opt, opt2, expected);
+			CheckOverwrite(opt, opt2);
 		}
 	};
 
@@ -1816,6 +2076,7 @@ public:
 		int* A = new int(42);
 		int* B = new int(42);
 		CheckCompare(*A, *B, svh::json());
+		CheckOverwrite(*A, *B);
 		delete A;
 		delete B;
 	}
@@ -1824,6 +2085,7 @@ public:
 		int* B = new int(43);
 		svh::json expected = svh::json(43);
 		CheckCompare(*A, *B, expected);
+		CheckOverwrite(*A, *B);
 		delete A;
 		delete B;
 	}
@@ -1837,23 +2099,51 @@ public:
 		std::unique_ptr<int> A = std::make_unique<int>(42);
 		std::unique_ptr<int> B = std::make_unique<int>(42);
 		CheckCompare(A, B, svh::json());
+		//CheckOverride(A, B);
+
+		std::unique_ptr<int> copy = std::make_unique<int>(42);
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(A, B), copy);
+		auto changes2 = svh::Compare::GetChanges(B, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	TEST_METHOD(UniquePointer_Changed) {
 		std::unique_ptr<int> A = std::make_unique<int>(42);
 		std::unique_ptr<int> B = std::make_unique<int>(43);
 		svh::json expected = svh::json(43);
 		CheckCompare(A, B, expected);
+		//CheckOverride(A, B);
+
+		std::unique_ptr<int> copy = std::make_unique<int>(42);
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(A, B), copy);
+		auto changes2 = svh::Compare::GetChanges(B, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	TEST_METHOD(UniquePointerOfUniquePointer_Unchanged) {
 		std::unique_ptr<std::unique_ptr<int>> A = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
 		std::unique_ptr<std::unique_ptr<int>> B = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
 		CheckCompare(A, B, svh::json());
+
+		//CheckOverride(A, B);
+		std::unique_ptr<std::unique_ptr<int>> copy = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(A, B), copy);
+		auto changes2 = svh::Compare::GetChanges(B, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 	TEST_METHOD(UniquePointerOfUniquePointer_Changed) {
 		std::unique_ptr<std::unique_ptr<int>> A = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
 		std::unique_ptr<std::unique_ptr<int>> B = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(43));
 		svh::json expected = svh::json(43);
 		CheckCompare(A, B, expected);
+		//CheckOverride(A, B);
+
+		std::unique_ptr<std::unique_ptr<int>> copy = std::make_unique<std::unique_ptr<int>>(std::make_unique<int>(42));
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(A, B), copy);
+		auto changes2 = svh::Compare::GetChanges(B, copy);
+		//check if changes2 is empty
+		Assert::IsTrue(changes2.empty());
 	}
 
 	/* Shared pointers */
@@ -1861,23 +2151,27 @@ public:
 		std::shared_ptr<int> A = std::make_shared<int>(42);
 		std::shared_ptr<int> B = std::make_shared<int>(42);
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(SharedPointer_Changed) {
 		std::shared_ptr<int> A = std::make_shared<int>(42);
 		std::shared_ptr<int> B = std::make_shared<int>(43);
 		svh::json expected = svh::json(43);
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(SharedPointerOfSharedPointer_Unchanged) {
 		std::shared_ptr<std::shared_ptr<int>> A = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(42));
 		std::shared_ptr<std::shared_ptr<int>> B = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(42));
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(SharedPointerOfSharedPointer_Changed) {
 		std::shared_ptr<std::shared_ptr<int>> A = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(42));
 		std::shared_ptr<std::shared_ptr<int>> B = std::make_shared<std::shared_ptr<int>>(std::make_shared<int>(43));
 		svh::json expected = svh::json(43);
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 
 	/* Weak pointers */
@@ -1887,6 +2181,7 @@ public:
 		std::shared_ptr<int> B_SP = std::make_shared<int>(42);
 		std::weak_ptr<int> B = B_SP;
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(WeakPointer_Changed) {
 		std::shared_ptr<int> A_SP = std::make_shared<int>(42);
@@ -1895,6 +2190,7 @@ public:
 		std::weak_ptr<int> B = B_SP;
 		svh::json expected = svh::json(43);
 		CheckCompare(A, B, expected);
+		CheckOverwrite(A, B);
 	}
 	};
 	//
@@ -1908,6 +2204,7 @@ public:
 		A.scale = { 1.0f, 1.0f, 1.0f };
 
 		CheckCompare(A, A, svh::json());
+		CheckOverwrite(A, A);
 	}
 
 	TEST_METHOD(TransformStruct_Changed) {
@@ -1925,6 +2222,7 @@ public:
 				{"scale",    svh::json::array({11.0f,12.0f,13.0f})}
 				})
 		);
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(ItemHolderStruct_Changed) {
@@ -1940,6 +2238,7 @@ public:
 				{"items", svh::Compare::GetChanges(A.items, B.items)}
 				})
 		);
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(GameEntityStruct_Unchanged) {
@@ -1951,7 +2250,8 @@ public:
 		B.name = "entity";
 		B.transform = std::make_shared<Transform>();
 		B.item_holder = std::make_shared<ItemHolder>();
-		CheckCompare(A, B, svh::json()); // returns empty since the values inside the pointers are the same
+		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(GameEntityStruct_Changed) {
@@ -1975,6 +2275,7 @@ public:
 					})}
 				})
 		);
+		CheckOverwrite(A, B);
 	}
 	};
 	//
@@ -1990,6 +2291,7 @@ public:
 		B.value = 42;
 		B.id = 0;
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(InheritedComponent_Changed) {
 		DerivedComponent A;
@@ -2005,6 +2307,7 @@ public:
 				{"value", 43}
 				})
 		);
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(BaseComponentTest_Unchanged) {
@@ -2014,6 +2317,7 @@ public:
 		B->id = 1;
 
 		CheckCompare(*A, *B, svh::json());
+		CheckOverwrite(*A, *B);
 		delete A;
 		delete B;
 	}
@@ -2028,6 +2332,7 @@ public:
 				{"id", 2}
 				})
 		);
+		CheckOverwrite(*A, *B);
 		delete A;
 		delete B;
 	}
@@ -2040,11 +2345,13 @@ public:
 		long long A = 123456789012345LL;
 		long long B = 123456789012345LL;
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 	TEST_METHOD(LongLong_Changed) {
 		long long A = 123456789012345LL;
 		long long B = 123456789012346LL;
 		CheckCompare(A, B, svh::json(123456789012346LL));
+		CheckOverwrite(A, B);
 	}
 
 	// unsigned long long
@@ -2052,11 +2359,13 @@ public:
 		unsigned long long ull = 123456789012345ULL;
 		unsigned long long ull2 = 123456789012345ULL;
 		CheckCompare(ull, ull2, svh::json());
+		CheckOverwrite(ull, ull2);
 	}
 	TEST_METHOD(UnsignedLongLong_Changed) {
 		unsigned long long ull = 123456789012345ULL;
 		unsigned long long ull2 = 123456789012346ULL;
 		CheckCompare(ull, ull2, svh::json(123456789012346ULL));
+		CheckOverwrite(ull, ull2);
 	}
 
 	// size_t
@@ -2064,11 +2373,13 @@ public:
 		std::size_t sz = 123456789012345ULL;
 		std::size_t sz2 = 123456789012345ULL;
 		CheckCompare(sz, sz2, svh::json());
+		CheckOverwrite(sz, sz2);
 	}
 	TEST_METHOD(SizeT_Changed) {
 		std::size_t sz = 123456789012345ULL;
 		std::size_t sz2 = 123456789012346ULL;
 		CheckCompare(sz, sz2, svh::json(123456789012346ULL));
+		CheckOverwrite(sz, sz2);
 	}
 	};
 
@@ -2111,6 +2422,7 @@ public:
 		PlayerEntity A = CreateComplexNestedObject();
 		PlayerEntity B = CreateComplexNestedObject();
 		CheckCompare(A, B, svh::json());
+		CheckOverwrite(A, B);
 	}
 
 	TEST_METHOD(PlayerEntitySerialization_Changed) {
@@ -2148,6 +2460,17 @@ public:
 			}
 		};
 		CheckCompare(A, B, expected);
+		//CheckOverwrite(A, B);
+
+		auto copy = CreateComplexNestedObject();
+		svh::Overwrite::FromJson(svh::Compare::GetChanges(A, B), copy);
+		auto changes2 = svh::Compare::GetChanges(B, copy);
+		//check if changes2 is empty
+		auto dump = changes2.dump();
+		Logger::WriteMessage(dump.c_str());
+
+		Assert::IsTrue(changes2.empty());
+
 	}
 	};
 

@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <svh/visit_struct/visit_struct.hpp>
 #include <type_traits>
+#include <set>
+#include <unordered_set>
 
 namespace svh {
 	/* Still uses nlohmann json but so we can easily swap it for non ordered if wanted */
@@ -189,6 +191,15 @@ namespace svh {
 	template<typename T>
 	constexpr bool is_std_tuple_v = is_specialization<T, std::tuple>::value;
 
+	/* Is any set type */
+	template<typename T>
+	constexpr bool is_set_v = is_specialization<T, std::set>::value ||
+		is_specialization<T, std::unordered_set>::value ||
+		is_specialization<T, std::multiset>::value ||
+		is_specialization<T, std::unordered_multiset>::value;
+
+	template<typename T, typename R = void>
+	constexpr bool enable_if_set_v = std::enable_if_t<is_set_v<T>, R>;
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected
@@ -257,6 +268,17 @@ namespace svh {
 	template <typename T, typename R>
 	using enable_if_has_compare = std::enable_if_t<has_compare_v<T>, R>;
 
+	/* Overwrite function detection */
+	template <typename T>
+	using overwrite_fn = decltype(OverwriteImpl(std::declval<const json&>(), std::declval<T&>()));
+
+	template<typename T>
+	constexpr bool has_overwrite_v = is_detected<overwrite_fn, T>::value;
+
+	template <typename T, typename R>
+	using enable_if_has_overwrite = std::enable_if_t<has_overwrite_v<T>, R>;
+
+
 	/* For json key names */
 	constexpr char REMOVED[] = "removed";
 	constexpr char ADDED_VALUES[] = "added";
@@ -285,10 +307,28 @@ namespace svh {
 		return x;
 	}
 
+	template<typename Map>
+	auto to_std_vector(const Map& m)
+		-> std::enable_if_t<is_associative_map_v<Map>,
+		std::vector<std::pair<typename Map::key_type,
+		typename Map::mapped_type>>>
+	{
+		using K = typename Map::key_type;
+		using V = typename Map::mapped_type;
+
+		std::vector<std::pair<K, V>> out;
+		out.reserve(m.size());
+		for (auto const& kv : m) {
+			// copy key/value into a non-const‐key pair
+			out.emplace_back(kv.first, kv.second);
+		}
+		return out;
+	}
+
 	//decltype(to_std_vector(*std::begin(s))) gets the type of the first element
 	template<typename Seq>
 	auto to_std_vector(const Seq& s)
-		-> std::enable_if_t<svh::is_sequence_v<Seq>, std::vector< decltype(to_std_vector(*std::begin(s)))>> {
+		-> std::enable_if_t<svh::is_sequence_v<Seq> && !is_associative_map_v<Seq>, std::vector< decltype(to_std_vector(*std::begin(s)))>> {
 		using Inner = decltype(to_std_vector(*std::begin(s)));
 		std::vector<Inner> out;
 		out.reserve(std::distance(std::begin(s), std::end(s)));
@@ -314,9 +354,28 @@ namespace svh {
 	auto to_std_vector(const std::tuple<Args...>& t)
 		-> std::enable_if_t < (sizeof...(Args) > 0),
 		decltype(to_std_vector_impl(t, std::index_sequence_for<Args...>{}))
-	>
+		>
 	{
 		return to_std_vector_impl(t, std::index_sequence_for<Args...>{});
+	}
+
+	// generic recursive “make me a Container from its vector-of-… representation”
+	template<typename Container>
+	Container rebuild_from_vector(
+		const decltype(to_std_vector(std::declval<Container>()))& vec
+	) {
+		using Key = typename Container::value_type;
+		if constexpr (!svh::is_sequence_v<Key>) {
+			// base: e.g. Container = std::set<int>, vec = std::vector<int>
+			return Container{ vec.begin(), vec.end() };
+		} else {
+			// recursive: Key is itself a container
+			Container out;
+			for (auto const& subvec : vec) {
+				out.insert(rebuild_from_vector<Key>(subvec));
+			}
+			return out;
+		}
 	}
 
 }
