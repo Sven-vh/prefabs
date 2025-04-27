@@ -126,6 +126,42 @@ inline void DeserializeImpl(const svh::json& j, Direction& d) {
 	}
 }
 
+struct MyStruct {
+	int a = 0;
+	float b = 0.0f;
+	std::string c = "default";
+};
+
+inline svh::json SerializeImpl(const MyStruct& s) {
+	svh::json result = svh::json::object();
+	result["a"] = svh::Serializer::ToJson(s.a); // int
+	result["b"] = svh::Serializer::ToJson(s.b); // float
+	result["c"] = svh::Serializer::ToJson(s.c); // string
+	return result;
+}
+
+inline void DeserializeImpl(const svh::json& j, MyStruct& s) {
+	if (j.is_object()) {
+		svh::Deserializer::FromJson(j["a"], s.a); // int
+		svh::Deserializer::FromJson(j["b"], s.b); // float
+		svh::Deserializer::FromJson(j["c"], s.c); // string
+	}
+}
+
+inline svh::json CompareImpl(const MyStruct& left, const MyStruct& right) {
+	svh::json result = svh::json::object();
+	if (left.a != right.a) {
+		result["a"] = svh::Serializer::ToJson(right.a);
+	}
+	if (left.b != right.b) {
+		result["b"] = svh::Serializer::ToJson(right.b);
+	}
+	if (left.c != right.c) {
+		result["c"] = svh::Serializer::ToJson(right.c);
+	}
+	return result;
+}
+
 struct Weapon {
 	std::string name;
 	int damage;
@@ -164,5 +200,6 @@ struct PlayerEntity {
 	std::vector<std::shared_ptr<Weapon>> weapons;
 	std::map<std::string, std::shared_ptr<Armor>> armors;
 	std::optional<SkillTree> skill_tree;
+	MyStruct my_struct; // Added for testing
 };
-VISITABLE_STRUCT(PlayerEntity, id, transform, inventory, weapons, armors, skill_tree);
+VISITABLE_STRUCT(PlayerEntity, id, transform, inventory, weapons, armors, skill_tree, my_struct);
