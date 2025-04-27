@@ -130,6 +130,10 @@ struct MyStruct {
 	int a = 0;
 	float b = 0.0f;
 	std::string c = "default";
+
+	bool operator==(const MyStruct& other) const {
+		return a == other.a && b == other.b && c == other.c;
+	}
 };
 
 inline svh::json SerializeImpl(const MyStruct& s) {
@@ -200,6 +204,5 @@ struct PlayerEntity {
 	std::vector<std::shared_ptr<Weapon>> weapons;
 	std::map<std::string, std::shared_ptr<Armor>> armors;
 	std::optional<SkillTree> skill_tree;
-	MyStruct my_struct; // Added for testing
 };
-VISITABLE_STRUCT(PlayerEntity, id, transform, inventory, weapons, armors, skill_tree, my_struct);
+VISITABLE_STRUCT(PlayerEntity, id, transform, inventory, weapons, armors, skill_tree);
