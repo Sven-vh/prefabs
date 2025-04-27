@@ -1604,21 +1604,25 @@ public:
 			{"first", {{"a",5},{"b",6}}},
 			{"second",{{"c",7},{"d",8}}}
 		};
-		//{"changed":{"first":{"changed":{"a":5,"b":6}},"second":{"changed":{"c":7,"d":8}}}}
+		//{"changed":[{"first":{"changed":[{"a":5},{"b":6}]}},{"second":{"changed":[{"c":7},{"d":8}]}}]}
 		svh::json expected = {
 			{ svh::CHANGED_VALUES, {
-				{ "first", {
-					{ svh::CHANGED_VALUES, {
-						{ "a", 5 },
-						{ "b", 6 }
+				{
+					{ svh::FIRST, {
+						{ svh::CHANGED_VALUES, {
+							{ { "a", 5 } },
+							{ { "b", 6 } }
+						}}
 					}}
-				}},
-				{ "second", {
-					{ svh::CHANGED_VALUES, {
-						{ "c", 7 },
-						{ "d", 8 }
+				},
+				{
+					{ svh::SECOND, {
+						{ svh::CHANGED_VALUES, {
+							{ { "c", 7 } },
+							{ { "d", 8 } }
+						}}
 					}}
-				}}
+				}
 			}}
 		};
 		CheckCompare(mm, mm2, expected);
@@ -1700,18 +1704,22 @@ public:
 		//{"changed":{"first":{"changed":{"a":5,"b":6}},"second":{"changed":{"c":7,"d":8}}}}
 		svh::json expected = {
 			{ svh::CHANGED_VALUES, {
-				{ svh::FIRST, {
-					{ svh::CHANGED_VALUES, {
-						{ "a", 5 },
-						{ "b", 6 }
+				{
+					{ svh::FIRST, {
+						{ svh::CHANGED_VALUES, {
+							{ { "a", 5 } },
+							{ { "b", 6 } }
+						}}
 					}}
-				}},
-				{ svh::SECOND, {
-					{ svh::CHANGED_VALUES, {
-						{ "c", 7 },
-						{ "d", 8 }
+				},
+				{
+					{ svh::SECOND, {
+						{ svh::CHANGED_VALUES, {
+							{ { "c", 7 } },
+							{ { "d", 8 } }
+						}}
 					}}
-				}}
+				}
 			}}
 		};
 		CheckCompare(umm, umm2, expected);
@@ -1793,21 +1801,24 @@ public:
 		//{"changed":{"first":{"changed":{"a":5,"b":6}},"second":{"changed":{"c":7,"d":8}}}}
 		svh::json expected = {
 			{ svh::CHANGED_VALUES, {
-				{ svh::FIRST, {
-					{ svh::CHANGED_VALUES, {
-						{ "a", 5 },
-						{ "b", 6 }
+				{
+					{ svh::FIRST, {
+						{ svh::CHANGED_VALUES, {
+							{ { "a", 5 } },
+							{ { "b", 6 } }
+						}}
 					}}
-				}},
-				{svh::SECOND, {
-					{ svh::CHANGED_VALUES, {
-						{ "c", 7 },
-						{ "d", 8 }
+				},
+				{
+					{ svh::SECOND, {
+						{ svh::CHANGED_VALUES, {
+							{ { "c", 7 } },
+							{ { "d", 8 } }
+						}}
 					}}
-				}}
+				}
 			}}
 		};
-
 		CheckCompare(mmm, mmm2, expected);
 		CheckOverwrite(mmm, mmm2);
 	}
@@ -1886,20 +1897,24 @@ public:
 		};
 		//{"changed":{"first":{"changed":{"a":5,"b":6}},"second":{"changed":{"c":7,"d":8}}}}
 		svh::json expected = {
-			{ svh::CHANGED_VALUES, {
-				{ svh::FIRST, {
-					{ svh::CHANGED_VALUES, {
-						{ "a", 5 },
-						{ "b", 6 }
+			{ svh::CHANGED_VALUES, svh::json::array({
+				{
+					{ svh::FIRST, {
+						{ svh::CHANGED_VALUES, svh::json::array({
+							{ { "a", 5 } },
+							{ { "b", 6 } }
+						}) }
 					}}
-				}},
-				{ svh::SECOND, {
-					{ svh::CHANGED_VALUES, {
-						{ "c", 7 },
-						{ "d", 8 }
+				},
+				{
+					{ svh::SECOND, {
+						{ svh::CHANGED_VALUES, svh::json::array({
+							{ { "c", 7 } },
+							{ { "d", 8 } }
+						}) }
 					}}
-				}}
-			}}
+				}
+			})}
 		};
 		CheckCompare(ummm, ummm2, expected);
 		CheckOverwrite(ummm, ummm2);
@@ -2431,6 +2446,8 @@ public:
 		B.weapons[0]->damage = 20;
 		B.transform->position = { 4.0f, 5.0f, 6.0f };
 		B.armors["body"]->defense = 10;
+		auto subskill = Skill{ "Thunder", 5, {} };
+		B.skill_tree.value().skills.push_back(Skill{ "Lightning", 1, {subskill} });
 		svh::json expected = {
 			{
 				"transform", {
@@ -2444,18 +2461,53 @@ public:
 							{ svh::INDEX, svh::json::array({ 0 }) },
 							{ svh::VALUE, {
 								{ "damage", 20 }
-							}}
+							} }
 						}
-					})}
+					}) }
 				}
 			},
 			{
 				"armors", {
-					{ svh::CHANGED_VALUES, {
-						{ "body", {
-							{ "defense", 10 }
-						}}
-					}}
+					{ svh::CHANGED_VALUES, svh::json::array({
+						{
+							{ "body", {
+								{ "defense", 10 }
+							} }
+						}
+					}) }
+				}
+			},
+			{
+				"skill_tree", {
+					{ "skills", svh::json::array({
+						{
+							{ "name", "Fireball" },
+							{ "level", 3 },
+							{ "subskills", svh::json::array() }
+						},
+						{
+							{ "name", "IceShard" },
+							{ "level", 2 },
+							{ "subskills", svh::json::array({
+								{
+									{ "name", "Freeze" },
+									{ "level", 1 },
+									{ "subskills", svh::json::array() }
+								}
+							}) }
+						},
+						{
+							{ "name", "Lightning" },
+							{ "level", 1 },
+							{ "subskills", svh::json::array({
+								{
+									{ "name", "Thunder" },
+									{ "level", 5 },
+									{ "subskills", svh::json::array() }
+								}
+							}) }
+						}
+					}) }
 				}
 			}
 		};
@@ -2463,11 +2515,13 @@ public:
 		//CheckOverwrite(A, B);
 
 		auto copy = CreateComplexNestedObject();
-		svh::Overwrite::FromJson(svh::Compare::GetChanges(A, B), copy);
+		auto changes = svh::Compare::GetChanges(A, B);
+		auto dump1 = changes.dump(4);
+		svh::Overwrite::FromJson(changes, copy);
 		auto changes2 = svh::Compare::GetChanges(B, copy);
 		//check if changes2 is empty
-		auto dump = changes2.dump();
-		Logger::WriteMessage(dump.c_str());
+		auto dump2 = changes2.dump(4);
+		Logger::WriteMessage(dump2.c_str());
 
 		Assert::IsTrue(changes2.empty());
 

@@ -248,7 +248,7 @@ namespace std {
 		typename A  // Allocator type
 	>
 	static inline void DeserializeImpl(const svh::json& j, std::map<K, V, C, A>& value) {
-		if (!j.is_object()) {
+		if (!j.is_object() || j.contains(svh::ADDED_VALUES) || j.contains(svh::REMOVED) || j.contains(svh::CHANGED_VALUES)) {
 			svh::Overwrite::FromJson(j, value); // Use overwrite to handle non-object types
 			return;
 		}
@@ -749,7 +749,7 @@ namespace std {
 
 		svh::json added_entries = svh::json::array();
 		svh::json removed_keys = svh::json::array();
-		svh::json changed = svh::json::object();
+		svh::json changed = svh::json::array();
 
 		// 1) scan additions in `right`
 		for (auto const& item : right) {
@@ -774,7 +774,11 @@ namespace std {
 			if (rit != right.end()) {
 				auto cd = svh::Compare::GetChanges(v, rit->second);
 				if (!cd.empty()) {
-					changed[svh::Serializer::ToJson(k).get<std::string>()] = cd;
+					//changed[svh::Serializer::ToJson(k).get<std::string>()] = cd;
+					auto key = svh::Serializer::ToJson(k);
+					changed.push_back(
+						svh::json::object({ {key,cd} })
+					);
 				}
 			}
 		}
@@ -1160,10 +1164,12 @@ namespace std {
 			}
 		}
 
+		auto dump = j.dump();
+
 		// 2) additions
 		if (j.contains(svh::ADDED_VALUES)) {
 			for (auto const& item : j[svh::ADDED_VALUES]) {
-				auto dump = item.dump();
+				auto dump2 = item.dump();
 				if (!item.is_object()) {
 					svh::Deserializer::HandleError("map", item);
 					continue;
@@ -1180,29 +1186,58 @@ namespace std {
 
 		// 3) in‐place changes
 		if (j.contains(svh::CHANGED_VALUES)) {
-			for (auto it = j[svh::CHANGED_VALUES].begin();
-				it != j[svh::CHANGED_VALUES].end();
-				++it) {
-				// ‘it.key()’ is the JSON‐stringified key
-				const auto& keyStr = it.key();
-				svh::json   keyJ;
-				try {
-					keyJ = svh::json::parse(keyStr);
-				} catch (...) {
-					// fallback if keyStr wasn’t valid JSON (e.g. raw string keys)
-					keyJ = keyStr;
+			const auto& changed = j[svh::CHANGED_VALUES];
+
+			// Case A: object of key→value
+			if (changed.is_object()) {
+				for (auto it = changed.begin(); it != changed.end(); ++it) {
+					const auto& keyStr = it.key();
+					svh::json keyJ;
+					try {
+						keyJ = svh::json::parse(keyStr);
+					} catch (...) {
+						keyJ = keyStr;
+					}
+					Key k;
+					svh::Overwrite::FromJson(keyJ, k);
+
+					auto mapIt = m.find(k);
+					if (mapIt != m.end()) {
+						svh::Overwrite::FromJson(it.value(), mapIt->second);
+					} else {
+						svh::Deserializer::HandleError("map", j);
+					}
 				}
 
-				Key k;
-				svh::Overwrite::FromJson(keyJ, k);
+				// Case B: array of single‐pair objects
+			} else if (changed.is_array()) {
+				for (const auto& entry : changed) {
+					if (!entry.is_object()) {
+						continue;  // skip anything unexpected
+					}
+					for (auto it2 = entry.begin(); it2 != entry.end(); ++it2) {
+						const auto& keyStr = it2.key();
+						svh::json keyJ;
+						try {
+							keyJ = svh::json::parse(keyStr);
+						} catch (...) {
+							keyJ = keyStr;
+						}
+						Key k;
+						svh::Overwrite::FromJson(keyJ, k);
 
-				auto mapIt = m.find(k);
-				if (mapIt != m.end()) {
-					// recurse into the mapped value
-					svh::Overwrite::FromJson(it.value(), mapIt->second);
-				} else {
-					svh::Deserializer::HandleError("map", j);
+						auto mapIt = m.find(k);
+						if (mapIt != m.end()) {
+							svh::Overwrite::FromJson(it2.value(), mapIt->second);
+						} else {
+							svh::Deserializer::HandleError("map", j);
+						}
+					}
 				}
+
+			} else {
+				// Neither object nor array?  Handle error or ignore.
+				svh::Deserializer::HandleError("changed", j);
 			}
 		}
 	}

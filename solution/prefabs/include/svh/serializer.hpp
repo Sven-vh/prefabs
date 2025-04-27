@@ -257,6 +257,18 @@ namespace svh {
 			}
 			OverwriteImpl(j, value);
 		}
+
+		/* For visitable struct */
+		template<typename T>
+		void operator()(const char* name, T& value) {
+			auto it = input.find(name);
+			if (it != input.end()) {
+				OverwriteImpl(it.value(), value);
+			}
+		}
+
+	private: /* Variables */
+		json input;
 	private: /* Functions */
 
 		/* For userdefined overwrites*/
@@ -266,10 +278,19 @@ namespace svh {
 			return UserDefinedOverwriteImpl(j, value);
 		}
 
+		/* For visitable structs only */
+		template<typename T>
+		static auto OverwriteImpl(const json& j, T& value)
+			-> enable_if_visitable<T, void> {
+			Overwrite overwrite;
+			overwrite.input = j;
+			visit_struct::for_each(value, overwrite);
+		}
+
 		/* For everything else */
 		template<typename T>
 		static auto OverwriteImpl(const json& j, T& value)
-			-> std::enable_if_t<svh::has_overwrite_v<T> == false, void> {
+			-> std::enable_if_t < svh::has_overwrite_v<T> == false && !svh::is_visitable_v<T>, void> {
 			svh::Deserializer::FromJson(j, value);
 		}
 	};
