@@ -237,6 +237,10 @@ public:
 		std::map<std::string, int> m{ {"one",1},{"two",2} };
 		CheckSerialization(m, svh::json::object({ {"one",1},{"two",2} }));
 	}
+	TEST_METHOD(MapBool) {
+		std::map< std::string, bool> m{ {"true",true},{"false",false} };
+		CheckSerialization(m, svh::json::object({ {"false",false}, {"true",true} }));
+	}
 	TEST_METHOD(FloatMap) {
 		std::map<float, int> m{ {1.0f,1},{2.0f,2} };
 		//auto json_object = svh::json::object({ {1.0f,1},{2.0f,2} }); // isn't valid JSON

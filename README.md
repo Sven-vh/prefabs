@@ -59,7 +59,7 @@ VISITABLE_STRUCT(MyStruct, a, b, c);
 
 ### Custom Serialize Implementation
 
-You can also implement the `SerializeImpl` and ``DeserializeImpl`` functions for your custom type yourself.
+You can also implement the `SerializeImpl` and ``DeserializeImpl`` functions for your custom type yourself. **These functions need to be defined inside a header**
 
 ```cpp
 struct MyStruct {

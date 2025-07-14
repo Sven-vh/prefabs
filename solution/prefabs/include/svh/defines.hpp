@@ -199,7 +199,7 @@ namespace svh {
 		is_specialization<T, std::unordered_multiset>::value;
 
 	template<typename T, typename R = void>
-	constexpr bool enable_if_set_v = std::enable_if_t<is_set_v<T>, R>;
+	constexpr bool enable_if_set_v = std::enable_if_t<is_set_v<T>, R>::value;
 
 #pragma region external
 	// Source: https://en.cppreference.com/w/cpp/experimental/is_detected
@@ -247,6 +247,16 @@ namespace svh {
 
 	template <typename T, typename R>
 	using enable_if_has_serialize = std::enable_if_t<has_serialize_v<T>, R>;
+
+	// detect user_serialize(v, extra)
+	template<typename T, typename Extra>
+	using serialize_fn_extra = decltype(SerializeImpl(std::declval<const T&>(), std::declval<Extra&>()));
+
+	template<typename T, typename Extra>
+	constexpr bool has_serialize_extra_v = is_detected<serialize_fn_extra, T, Extra>::value;
+
+	template <typename T, typename Extra, typename R>
+	using enable_if_has_serialize_extra = std::enable_if_t<has_serialize_extra_v<T, Extra>, R>;
 
 	/* Deserializer function detection */
 	template <typename T>
